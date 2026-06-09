@@ -35,6 +35,24 @@ python3 -m http.server 3000
 # http://localhost:3000/staff.html   ← 직원 대시보드
 ```
 
+## 모바일 설치
+
+### Android
+APK 파일(`두브란스_병원안내_v1.0.apk`)을 기기로 전송한 뒤:
+1. 설정 → **알 수 없는 앱 설치** 허용
+2. APK 탭하여 설치
+
+### iOS (iPhone / iPad)
+1. **Safari**에서 아래 주소 접속
+   ```
+   https://heopaulo.github.io/intel1_doovrance_app/kiosk.html
+   ```
+2. 하단 **공유 버튼** (□↑) 탭
+3. **홈 화면에 추가** 선택 → 추가
+4. 홈 화면 아이콘으로 전체화면 실행
+
+> Chrome은 홈 화면 추가를 지원하지 않으므로 반드시 **Safari** 사용
+
 ## 기술 스택
 
 - **Frontend** — Vanilla HTML/CSS/JS (프레임워크 없음)
