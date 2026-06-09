@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4 portrait; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'NanumGothic','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif; }
+
+.page { width: 210mm; height: 297mm; page-break-after: always; overflow: hidden; position: relative; }
+
+/* ════════════════════════════════════════════════════
+   PAGE 1 · 영양주사
+════════════════════════════════════════════════════ */
+.p1 { background: #0f172a; color: white; }
+
+.p1-top {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+  padding: 10mm 12mm 8mm;
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+}
+.p1-top-text { flex: 1; }
+.p1-eyebrow { font-size: 11pt; color: #60a5fa; font-weight: 700; letter-spacing: 1px; margin-bottom: 2mm; }
+.p1-h1 { font-size: 38pt; font-weight: 900; line-height: 1.1; color: white; }
+.p1-h1 span { color: #fbbf24; display: block; }
+.p1-tagline { font-size: 11pt; color: #94a3b8; margin-top: 3mm; }
+
+.p1-list { padding: 5mm 10mm 0; display: flex; flex-direction: column; gap: 2.5mm; }
+
+.inj-row {
+  display: flex;
+  align-items: stretch;
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 17mm;
+}
+.inj-num {
+  width: 14mm;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16pt; font-weight: 900; color: white; flex-shrink: 0;
+}
+.inj-icon {
+  width: 13mm;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18pt; flex-shrink: 0;
+  background: rgba(255,255,255,.07);
+}
+.inj-info {
+  flex: 1;
+  background: rgba(255,255,255,.05);
+  display: flex; align-items: center;
+  padding: 0 4mm;
+}
+.inj-name-big { font-size: 13pt; font-weight: 900; color: white; margin-right: 3mm; white-space: nowrap; }
+.inj-desc { font-size: 8pt; color: #94a3b8; line-height: 1.5; }
+.inj-price {
+  width: 22mm; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; background: rgba(255,255,255,.08);
+  font-size: 12pt; font-weight: 900;
+}
+.inj-price small { font-size: 7pt; color: #94a3b8; font-weight: 400; }
+
+.c1{background:#dc2626;} .c2{background:#ea580c;} .c3{background:#ca8a04;}
+.c4{background:#16a34a;} .c5{background:#0d9488;} .c6{background:#2563eb;} .c7{background:#7c3aed;}
+
+.p1-mix {
+  margin: 4mm 10mm;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  border-radius: 10px;
+  padding: 3mm 5mm;
+  text-align: center;
+  color: #1e293b;
+  font-size: 11pt;
+  font-weight: 900;
+}
+
+.p1-footer {
+  background: #1e40af;
+  padding: 4mm 10mm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.p1-footer-name { font-size: 14pt; font-weight: 900; color: white; }
+.p1-footer-tel  { font-size: 13pt; font-weight: 900; color: #fbbf24; }
+
+/* ════════════════════════════════════════════════════
+   PAGE 2 · 가격표
+════════════════════════════════════════════════════ */
+.p2 { background: white; }
+
+.p2-hero {
+  background: linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%);
+  padding: 7mm 12mm;
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+}
+.p2-hero-text { flex: 1; }
+.p2-eyebrow { font-size: 10pt; color: #bfdbfe; font-weight: 700; margin-bottom: 1.5mm; }
+.p2-h1 { font-size: 30pt; font-weight: 900; color: white; line-height: 1.15; }
+.p2-h1 em { color: #fbbf24; font-style: normal; display: block; }
+.p2-sub { font-size: 9.5pt; color: #bfdbfe; margin-top: 2mm; }
+
+.p2-body { padding: 4mm 10mm; }
+.sec-head {
+  font-size: 12pt; font-weight: 900; color: #1d4ed8;
+  border-left: 5px solid #1d4ed8; padding-left: 3mm;
+  margin-bottom: 3mm;
+}
+
+.price-tiles { display: flex; gap: 2.5mm; margin-bottom: 4mm; }
+.ptile {
+  flex: 1;
+  background: #f8faff;
+  border: 2px solid #e0eaff;
+  border-radius: 10px;
+  padding: 3.5mm 3mm;
+  text-align: center;
+}
+.ptile.star { background: #fffbeb; border-color: #fbbf24; }
+.ptile-name { font-size: 9.5pt; font-weight: 700; color: #1e293b; margin-bottom: 1.5mm; }
+.ptile-price { font-size: 20pt; font-weight: 900; color: #dc2626; line-height: 1; }
+.ptile-unit  { font-size: 8.5pt; color: #888; }
+.ptile-note  { font-size: 7pt; color: #64748b; margin-top: 1mm; }
+
+.big-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-bottom: 4mm; }
+.big-table th {
+  background: #1d4ed8; color: white;
+  padding: 2mm 3.5mm; text-align: left; font-weight: 700; font-size: 9.5pt;
+}
+.big-table td { padding: 2mm 3.5mm; border-bottom: 1px solid #e0eaff; }
+.big-table tr:nth-child(even) td { background: #f8faff; }
+.big-table .pr { text-align: right; font-weight: 900; color: #dc2626; font-size: 10pt; }
+
+.p2-footer {
+  background: #1e293b; color: white;
+  padding: 3.5mm 10mm;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 9pt;
+}
+.p2-footer span { color: #94a3b8; }
+.p2-footer strong { color: #60a5fa; font-size: 11pt; }
+
+/* ════════════════════════════════════════════════════
+   PAGE 3 · 만성피로
+════════════════════════════════════════════════════ */
+.p3 { background: #fef9ee; }
+
+.p3-hero {
+  background: linear-gradient(135deg, #78350f, #b45309);
+  padding: 10mm 12mm;
+  display: flex;
+  align-items: center;
+  gap: 8mm;
+  min-height: 70mm;
+}
+.p3-hero-left { flex: 1; color: white; }
+.p3-eyebrow { font-size: 11pt; color: #fcd34d; font-weight: 700; margin-bottom: 2mm; }
+.p3-h1 { font-size: 42pt; font-weight: 900; line-height: 1.1; }
+.p3-h1 em { color: #fcd34d; font-style: normal; display: block; }
+.p3-lead { font-size: 12pt; color: #fef3c7; margin-top: 3mm; line-height: 1.6; }
+
+.p3-cards { padding: 6mm 10mm; display: flex; gap: 4mm; margin-bottom: 5mm; }
+.p3-card {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 5mm 4mm;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  border-top: 4px solid #f59e0b;
+}
+.p3-card-icon { font-size: 28pt; margin-bottom: 2mm; }
+.p3-card-title { font-size: 11pt; font-weight: 900; color: #1e293b; margin-bottom: 2mm; }
+.p3-card-text  { font-size: 8.5pt; color: #555; line-height: 1.6; }
+
+.p3-ivnt {
+  margin: 0 10mm 5mm;
+  background: white;
+  border: 2px solid #f59e0b;
+  border-radius: 14px;
+  padding: 5mm 7mm;
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+}
+.p3-ivnt-badge {
+  background: #f59e0b;
+  color: white;
+  font-size: 9pt;
+  font-weight: 900;
+  padding: 2mm 4mm;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.p3-ivnt-text { font-size: 9.5pt; color: #444; line-height: 1.6; }
+
+.p3-cta {
+  margin: 0 10mm;
+  background: #b45309;
+  color: white;
+  border-radius: 12px;
+  padding: 5mm;
+  text-align: center;
+}
+.p3-cta-big  { font-size: 18pt; font-weight: 900; }
+.p3-cta-tel  { font-size: 22pt; font-weight: 900; color: #fcd34d; }
+.p3-cta-addr { font-size: 8.5pt; color: rgba(255,255,255,.7); margin-top: 1mm; }
+
+/* ════════════════════════════════════════════════════
+   PAGE 4 · 독감 수액제 vs 경구제
+════════════════════════════════════════════════════ */
+.p4 { background: #0f172a; color: white; }
+
+.p4-top {
+  background: #dc2626;
+  padding: 8mm 12mm 7mm;
+  text-align: center;
+}
+.p4-eyebrow { font-size: 11pt; color: #fecaca; font-weight: 700; margin-bottom: 1.5mm; }
+.p4-h1 { font-size: 38pt; font-weight: 900; color: white; line-height: 1.1; }
+.p4-h1 em { color: #fef08a; font-style: normal; }
+
+.p4-body { padding: 6mm 10mm; }
+
+.vs-wrap {
+  display: flex;
+  gap: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 6mm;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+
+.vs-left {
+  flex: 1;
+  background: #1e293b;
+  padding: 6mm 5mm;
+}
+.vs-right {
+  flex: 1;
+  background: linear-gradient(160deg, #1e40af, #1d4ed8);
+  padding: 6mm 5mm;
+}
+.vs-badge-wrap {
+  width: 18mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  flex-shrink: 0;
+}
+.vs-badge {
+  background: #dc2626;
+  color: white;
+  font-size: 13pt;
+  font-weight: 900;
+  width: 14mm; height: 14mm;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.vs-title {
+  font-size: 14pt; font-weight: 900; text-align: center;
+  padding-bottom: 3mm; border-bottom: 1px solid rgba(255,255,255,.2); margin-bottom: 3.5mm;
+}
+.vs-figure { text-align: center; font-size: 40pt; margin-bottom: 3mm; }
+.vs-row { font-size: 9.5pt; color: #e2e8f0; padding: 2mm 0; border-bottom: 1px solid rgba(255,255,255,.07); line-height: 1.4; }
+.vs-row:last-child { border-bottom: none; }
+.vs-row::before { content: '▸ '; color: #60a5fa; }
+.vs-row.good::before { content: '✓ '; color: #4ade80; }
+
+.p4-warn {
+  background: rgba(220,38,38,.2);
+  border: 1.5px solid #dc2626;
+  border-radius: 10px;
+  padding: 4mm 5mm;
+  font-size: 10pt; color: #fecaca; line-height: 1.6;
+  margin-bottom: 5mm;
+}
+.p4-warn strong { color: #fca5a5; font-weight: 900; }
+
+.p4-cta {
+  background: #1d4ed8;
+  border-radius: 12px;
+  padding: 4.5mm 6mm;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.p4-cta-left { font-size: 14pt; font-weight: 900; color: white; }
+.p4-cta-left small { font-size: 9pt; color: #bfdbfe; display: block; font-weight: 400; margin-top: 1mm; }
+.p4-cta-tel { font-size: 18pt; font-weight: 900; color: #fbbf24; }
+
+/* ════════════════════════════════════════════════════
+   PAGE 5 · ABC주사 + 무좀 + 행정
+════════════════════════════════════════════════════ */
+.p5 { background: white; }
+
+.p5-abc {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 8mm 12mm 7mm;
+  display: flex;
+  align-items: center;
+  gap: 8mm;
+}
+.p5-abc-text { flex: 1; color: white; }
+.p5-eyebrow { font-size: 11pt; color: #86efac; font-weight: 700; margin-bottom: 2mm; }
+.p5-h1 { font-size: 32pt; font-weight: 900; color: white; line-height: 1.1; margin-bottom: 3mm; }
+
+.abc-row { display: flex; gap: 3mm; }
+.abc-item {
+  flex: 1;
+  border-radius: 10px;
+  padding: 4mm 3mm;
+  text-align: center;
+}
+.abc-a { background: #dc2626; }
+.abc-b { background: #16a34a; }
+.abc-c { background: #7c3aed; }
+.abc-letter { font-size: 22pt; font-weight: 900; color: white; }
+.abc-name   { font-size: 9pt;  color: rgba(255,255,255,.85); font-weight: 700; margin: 1mm 0; }
+.abc-effect { font-size: 7.5pt; color: rgba(255,255,255,.7); line-height: 1.4; }
+
+.p5-lower { padding: 5mm 10mm; display: flex; gap: 5mm; }
+
+.mushroom-card {
+  flex: 1;
+  background: #f0fdf4;
+  border: 2px solid #22c55e;
+  border-radius: 14px;
+  padding: 5mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.mc-title { font-size: 18pt; font-weight: 900; color: #15803d; line-height: 1.2; margin-bottom: 3mm; }
+.mc-badge { background: #dcfce7; color: #15803d; font-size: 8.5pt; font-weight: 700; padding: 1.5mm 3mm; border-radius: 99px; margin-bottom: 3mm; }
+.mc-body  { font-size: 8.5pt; color: #444; line-height: 1.7; }
+.mc-cta   { margin-top: 3mm; font-size: 10pt; font-weight: 900; color: #15803d; }
+
+.admin-col { flex: 1; display: flex; flex-direction: column; gap: 4mm; }
+
+.adm-row {
+  background: #f8faff;
+  border-radius: 10px;
+  padding: 4mm 4.5mm;
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+  border-left: 5px solid #2563eb;
+}
+.adm-row.red { border-color: #dc2626; background: #fff5f5; }
+.adm-row.green { border-color: #22c55e; background: #f0fdf4; }
+.adm-row.orange { border-color: #f97316; background: #fff7ed; }
+.adm-icon  { font-size: 22pt; flex-shrink: 0; }
+.adm-text  { flex: 1; }
+.adm-title-s { font-size: 11pt; font-weight: 900; color: #1e293b; margin-bottom: 1mm; }
+.adm-body-s  { font-size: 8pt; color: #555; line-height: 1.6; }
+.adm-body-s strong { color: #1d4ed8; }
+
+.p5-footer {
+  background: #1e293b;
+  padding: 4mm 10mm;
+  display: flex; align-items: center; justify-content: space-between;
+  color: white;
+}
+.p5-footer-name { font-size: 12pt; font-weight: 900; }
+.p5-footer-info { font-size: 8.5pt; color: #94a3b8; margin-top: 1mm; }
+.p5-footer-tel  { font-size: 17pt; font-weight: 900; color: #fbbf24; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 1 · 영양주사 메뉴판
+════════════════════════════════════════════════════ -->
+<div class="page p1">
+  <div class="p1-top">
+    <div class="p1-top-text">
+      <div class="p1-eyebrow">두브란스 의원 · 원장 김재훈</div>
+      <div class="p1-h1">칵테일<span>영양주사</span></div>
+      <div class="p1-tagline">전문의가 처방하는 맞춤형 혈관영양주사 요법 (IVNT)</div>
+    </div>
+    <!-- Doctor SVG -->
+    <svg width="105" height="155" viewBox="0 0 105 165">
+      <!-- head -->
+      <circle cx="52" cy="28" r="24" fill="#FFDBB5"/>
+      <!-- hair -->
+      <path d="M28 22 Q52 4 76 22 Q76 8 52 6 Q28 8 28 22Z" fill="#4a3728"/>
+      <!-- white coat -->
+      <rect x="18" y="55" width="68" height="75" rx="10" fill="white"/>
+      <!-- coat collar/lapels -->
+      <path d="M18 55 L46 75 L46 55Z" fill="#d1d5db"/>
+      <path d="M86 55 L58 75 L58 55Z" fill="#d1d5db"/>
+      <!-- inner shirt blue -->
+      <rect x="46" y="55" width="12" height="55" fill="#1d4ed8"/>
+      <!-- stethoscope -->
+      <circle cx="52" cy="98" r="7" fill="none" stroke="#dc2626" stroke-width="3"/>
+      <line x1="52" y1="91" x2="52" y2="78" stroke="#dc2626" stroke-width="3"/>
+      <circle cx="52" cy="77" r="4" fill="#dc2626"/>
+      <!-- arms -->
+      <rect x="-2" y="60" width="22" height="13" rx="6" fill="white"/>
+      <rect x="84" y="60" width="22" height="13" rx="6" fill="white"/>
+      <!-- hands -->
+      <circle cx="0" cy="66" r="7" fill="#FFDBB5"/>
+      <circle cx="104" cy="66" r="7" fill="#FFDBB5"/>
+      <!-- legs -->
+      <rect x="28" y="130" width="18" height="34" rx="7" fill="#1e3a5f"/>
+      <rect x="58" y="130" width="18" height="34" rx="7" fill="#1e3a5f"/>
+      <!-- shoes -->
+      <ellipse cx="37" cy="163" rx="16" ry="6" fill="#0f172a"/>
+      <ellipse cx="67" cy="163" rx="16" ry="6" fill="#0f172a"/>
+    </svg>
+  </div>
+
+  <div class="p1-list">
+    <div class="inj-row">
+      <div class="inj-num c1">1</div>
+      <div class="inj-icon">✨</div>
+      <div class="inj-info">
+        <div class="inj-name-big">신데렐라주사</div>
+        <div class="inj-desc">항산화 · 피부 미백 · 비만·체지방 감소 · 피로 회복</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">50,000<small>원</small></div>
+    </div>
+    <div class="inj-row">
+      <div class="inj-num c2">2</div>
+      <div class="inj-icon">🍊</div>
+      <div class="inj-info">
+        <div class="inj-name-big">비타민C주사</div>
+        <div class="inj-desc">비타민C 결핍 예방 · 피부 탄력 · 면역력 강화</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">40,000<small>원</small></div>
+    </div>
+    <div class="inj-row">
+      <div class="inj-num c3">3</div>
+      <div class="inj-icon">💪</div>
+      <div class="inj-info">
+        <div class="inj-name-big">마늘주사</div>
+        <div class="inj-desc">만성피로 · 신경통 · 근육통 · 어깨 결림 완화</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">20,000<small>원</small></div>
+    </div>
+    <div class="inj-row">
+      <div class="inj-num c4">4</div>
+      <div class="inj-icon">🦴</div>
+      <div class="inj-info">
+        <div class="inj-name-big">비타민D주사</div>
+        <div class="inj-desc">뼈·근육 건강 · 알레르기 · 면역 기능 향상</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">30,000<small>원</small></div>
+    </div>
+    <div class="inj-row">
+      <div class="inj-num c5">5</div>
+      <div class="inj-icon">🌿</div>
+      <div class="inj-info">
+        <div class="inj-name-big">감초주사</div>
+        <div class="inj-desc">간염 억제 · 항알레르기 · 피부 트러블 · 해독</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">20,000<small>원</small></div>
+    </div>
+    <div class="inj-row">
+      <div class="inj-num c6">6</div>
+      <div class="inj-icon">🌸</div>
+      <div class="inj-info">
+        <div class="inj-name-big">태반주사</div>
+        <div class="inj-desc">갱년기 완화 · 간 기능 · 피부 재생 · 노화 예방</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">45,000<small>원</small></div>
+    </div>
+    <div class="inj-row">
+      <div class="inj-num c7">7</div>
+      <div class="inj-icon">⚡</div>
+      <div class="inj-info">
+        <div class="inj-name-big">백옥주사</div>
+        <div class="inj-desc">고함량 글루타치온 · 피부 미백 · 항산화</div>
+      </div>
+      <div class="inj-price" style="color:#fbbf24;">50,000<small>원</small></div>
+    </div>
+  </div>
+
+  <div class="p1-mix">Mix 칵테일로 맞으면 효과가 더욱 좋습니다! 원장님과 상담해보세요.</div>
+
+  <div class="p1-footer">
+    <div class="p1-footer-name">두브란스 의원 · 원장 김재훈<br><span style="font-size:8.5pt;font-weight:400;color:#bfdbfe;">서울 구로구 디지털로26길 123 지플러스타워</span></div>
+    <div class="p1-footer-tel">02-123-5678</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 2 · 가격표
+════════════════════════════════════════════════════ -->
+<div class="page p2">
+  <div class="p2-hero">
+    <!-- Nurse SVG -->
+    <svg width="78" height="118" viewBox="0 0 100 160">
+      <!-- head -->
+      <circle cx="50" cy="26" r="22" fill="#FFDBB5"/>
+      <!-- nurse cap -->
+      <rect x="28" y="6" width="44" height="12" rx="5" fill="white"/>
+      <rect x="44" y="4" width="12" height="16" rx="3" fill="white"/>
+      <rect x="47" y="7" width="6" height="10" rx="2" fill="#dc2626"/>
+      <!-- hair -->
+      <path d="M28 26 Q28 46 50 47 Q72 46 72 26" fill="#6b3a2a"/>
+      <!-- white coat -->
+      <rect x="15" y="50" width="70" height="72" rx="10" fill="white"/>
+      <!-- pink scrubs inner -->
+      <rect x="38" y="50" width="24" height="52" fill="#fce7f3"/>
+      <!-- coat lapels -->
+      <path d="M15 50 L38 68 L38 50Z" fill="#e5e7eb"/>
+      <path d="M85 50 L62 68 L62 50Z" fill="#e5e7eb"/>
+      <!-- cross on chest -->
+      <rect x="46" y="60" width="8" height="22" rx="3" fill="#dc2626"/>
+      <rect x="41" y="68" width="18" height="6" rx="3" fill="#dc2626"/>
+      <!-- arms -->
+      <rect x="0" y="55" width="18" height="13" rx="6" fill="white"/>
+      <rect x="82" y="55" width="18" height="13" rx="6" fill="white"/>
+      <!-- clipboard in hand -->
+      <rect x="80" y="65" width="18" height="22" rx="3" fill="#fef9c3" stroke="#d4a017" stroke-width="1.5"/>
+      <line x1="84" y1="71" x2="94" y2="71" stroke="#888" stroke-width="1.5"/>
+      <line x1="84" y1="76" x2="94" y2="76" stroke="#888" stroke-width="1.5"/>
+      <line x1="84" y1="81" x2="94" y2="81" stroke="#888" stroke-width="1.5"/>
+      <!-- legs -->
+      <rect x="28" y="122" width="17" height="36" rx="7" fill="#1e3a5f"/>
+      <rect x="55" y="122" width="17" height="36" rx="7" fill="#1e3a5f"/>
+      <ellipse cx="36" cy="158" rx="14" ry="5" fill="#0f172a"/>
+      <ellipse cx="64" cy="158" rx="14" ry="5" fill="#0f172a"/>
+    </svg>
+    <div class="p2-hero-text">
+      <div class="p2-eyebrow">두브란스 의원 비급여 안내</div>
+      <div class="p2-h1">진료·검사<em>가격 안내</em></div>
+      <div class="p2-sub">원장 김재훈 · T. 02-123-5678</div>
+    </div>
+  </div>
+
+  <div class="p2-body">
+    <div class="sec-head" style="margin-bottom:2.5mm;">감염병 검사</div>
+    <div class="price-tiles">
+      <div class="ptile">
+        <div class="ptile-name">독감 검사</div>
+        <div class="ptile-price">20,000</div>
+        <div class="ptile-unit">원 · 당일 결과</div>
+      </div>
+      <div class="ptile">
+        <div class="ptile-name">코로나 검사</div>
+        <div class="ptile-price">20,000</div>
+        <div class="ptile-unit">원 · 당일 결과</div>
+      </div>
+      <div class="ptile star">
+        <div class="ptile-name">⭐ 독감+코로나 동시</div>
+        <div class="ptile-price">30,000</div>
+        <div class="ptile-unit">원 · 동시 할인</div>
+      </div>
+      <div class="ptile">
+        <div class="ptile-name">코로나 PCR</div>
+        <div class="ptile-price">80,000</div>
+        <div class="ptile-unit">원 · 4~6시간</div>
+      </div>
+    </div>
+
+    <div class="sec-head" style="margin-bottom:2.5mm;">예방접종</div>
+    <table class="big-table">
+      <tr><th>종류</th><th>횟수</th><th style="text-align:right;width:40mm;">가격</th></tr>
+      <tr><td>대상포진 (스카이조스터 12M)</td><td>1회</td><td class="pr">120,000원</td></tr>
+      <tr><td>폐렴구균 (프리베나13)</td><td>1회</td><td class="pr">100,000원</td></tr>
+      <tr><td>A형간염</td><td>2회</td><td class="pr">70,000원/회</td></tr>
+      <tr><td>B형간염</td><td>3회</td><td class="pr">30,000원/회</td></tr>
+      <tr><td>독감 (인플루엔자)</td><td>1회</td><td class="pr">30,000원</td></tr>
+    </table>
+
+    <div class="sec-head" style="margin-bottom:2.5mm;">영양주사</div>
+    <table class="big-table">
+      <tr><th>종류</th><th style="text-align:right;width:40mm;">가격</th></tr>
+      <tr><td>신데렐라주사 / 백옥주사</td><td class="pr">50,000원</td></tr>
+      <tr><td>고용량 비타민C주사</td><td class="pr">40,000원</td></tr>
+      <tr><td>비타민D주사</td><td class="pr">30,000원</td></tr>
+      <tr><td>마늘주사 / 감초주사</td><td class="pr">20,000원</td></tr>
+      <tr><td>태반주사 (라이넥)</td><td class="pr">45,000원</td></tr>
+      <tr><td>ABC 웰빙 칵테일</td><td class="pr">60,000원</td></tr>
+    </table>
+  </div>
+
+  <div class="p2-footer">
+    <span>※ 비급여 기준, 사전 고지 없이 변경될 수 있습니다</span>
+    <strong>02-123-5678</strong>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 3 · 만성피로
+════════════════════════════════════════════════════ -->
+<div class="page p3">
+  <div class="p3-hero">
+    <div class="p3-hero-left">
+      <div class="p3-eyebrow">이런 증상 있으신가요?</div>
+      <div class="p3-h1">늘 피곤하고<em>무기력하다면</em></div>
+      <div class="p3-lead">비타민 부족이 원인일 수 있습니다.<br>영양주사 한 번으로 빠르게 회복하세요!</div>
+    </div>
+    <!-- Tired person SVG -->
+    <svg width="90" height="140" viewBox="0 0 100 160">
+      <!-- head drooping -->
+      <circle cx="50" cy="30" r="24" fill="#FFDBB5"/>
+      <!-- tired eyes closed -->
+      <path d="M36 28 Q40 24 44 28" fill="none" stroke="#4a3728" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M56 28 Q60 24 64 28" fill="none" stroke="#4a3728" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- worry lines -->
+      <path d="M38 20 Q41 17 44 20" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M56 20 Q59 17 62 20" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- sad mouth -->
+      <path d="M42 40 Q50 36 58 40" fill="none" stroke="#4a3728" stroke-width="2" stroke-linecap="round"/>
+      <!-- slouched body -->
+      <path d="M20 58 Q10 80 15 130 L85 130 Q90 80 80 58 Q50 45 20 58Z" fill="#78350f"/>
+      <!-- arms drooping -->
+      <path d="M20 70 Q0 90 5 110" fill="none" stroke="#78350f" stroke-width="12" stroke-linecap="round"/>
+      <path d="M80 70 Q100 90 95 110" fill="none" stroke="#78350f" stroke-width="12" stroke-linecap="round"/>
+      <!-- hands -->
+      <circle cx="5" cy="112" r="9" fill="#FFDBB5"/>
+      <circle cx="95" cy="112" r="9" fill="#FFDBB5"/>
+      <!-- legs -->
+      <rect x="28" y="130" width="17" height="28" rx="7" fill="#451a03"/>
+      <rect x="55" y="130" width="17" height="28" rx="7" fill="#451a03"/>
+      <!-- zzz -->
+      <text x="62" y="18" font-size="18" fill="#fcd34d" font-weight="900">z</text>
+      <text x="74" y="10" font-size="13" fill="#fcd34d" font-weight="900">z</text>
+      <text x="83" y="4" font-size="9" fill="#fcd34d" font-weight="900">z</text>
+    </svg>
+  </div>
+
+  <div class="p3-cards">
+    <div class="p3-card">
+      <div class="p3-card-icon">😮‍💨</div>
+      <div class="p3-card-title">만성피로</div>
+      <div class="p3-card-text">아무리 자도 피곤하고<br>온몸이 무거운 느낌</div>
+    </div>
+    <div class="p3-card">
+      <div class="p3-card-icon">🧠</div>
+      <div class="p3-card-title">집중력 저하</div>
+      <div class="p3-card-text">멍한 상태 지속,<br>업무·학업 집중 어려움</div>
+    </div>
+    <div class="p3-card">
+      <div class="p3-card-icon">💪</div>
+      <div class="p3-card-title">근육통·결림</div>
+      <div class="p3-card-text">어깨·목·허리 뻐근함,<br>이유 없는 근육통</div>
+    </div>
+    <div class="p3-card">
+      <div class="p3-card-icon">🛡️</div>
+      <div class="p3-card-title">면역력 저하</div>
+      <div class="p3-card-text">감기가 잦고<br>회복이 느린 경우</div>
+    </div>
+  </div>
+
+  <div class="p3-ivnt">
+    <div class="p3-ivnt-badge">IVNT 란?</div>
+    <div class="p3-ivnt-text">
+      <strong>혈관영양주사요법</strong>으로, 고농도 비타민C·B군·미네랄 등 각종 영양소를
+      혈관으로 직접 공급해 저하된 신체 기능을 빠르게 회복시키는 치료법입니다.
+    </div>
+  </div>
+
+  <div class="p3-cta">
+    <div class="p3-cta-big">지금 바로 원장님과 상담하세요!</div>
+    <div class="p3-cta-tel">02-123-5678</div>
+    <div class="p3-cta-addr">두브란스 의원 · 서울 구로구 디지털로26길 123 지플러스타워 · 평일 09:00~18:00 / 토 09:00~13:00</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 4 · 독감 수액제 vs 경구제
+════════════════════════════════════════════════════ -->
+<div class="page p4">
+  <div class="p4-top">
+    <div class="p4-eyebrow">독감 걸리셨나요?</div>
+    <div class="p4-h1">독감, <em>30분</em>에 끝내세요</div>
+  </div>
+
+  <div class="p4-body">
+    <div class="vs-wrap">
+      <div class="vs-left">
+        <div class="vs-figure">😩</div>
+        <div class="vs-title">💊 경구제 (먹는 약)</div>
+        <div class="vs-row">5일간 하루 2번 복용</div>
+        <div class="vs-row">흡수까지 시간 소요</div>
+        <div class="vs-row">메스꺼움·구토 부작용</div>
+        <div class="vs-row">빠뜨리면 효과 저하</div>
+      </div>
+      <div class="vs-badge-wrap">
+        <div class="vs-badge">VS</div>
+      </div>
+      <div class="vs-right">
+        <div class="vs-figure">😌</div>
+        <div class="vs-title">💉 수액제 (주사)</div>
+        <div class="vs-row good">단 1회·30분 완료</div>
+        <div class="vs-row good">혈관 직접 투여·즉각 흡수</div>
+        <div class="vs-row good">소화기 부작용 없음</div>
+        <div class="vs-row good">바쁜 현대인에게 최적</div>
+      </div>
+    </div>
+
+    <div class="p4-warn">
+      ⚠️ 독감을 방치하면 <strong>폐렴·기관지염</strong>으로 악화될 수 있습니다.<br>
+      증상이 느껴지는 즉시 <strong>빠른 치료</strong>를 받으세요!
+    </div>
+
+    <!-- Patient + doctor SVG scene -->
+    <div style="display:flex; justify-content:center; margin-bottom:5mm; gap:10mm; align-items:flex-end;">
+      <!-- sick patient -->
+      <svg width="80" height="120" viewBox="0 0 100 150">
+        <circle cx="50" cy="26" r="22" fill="#FFDBB5"/>
+        <path d="M30 22 Q50 6 70 22 Q70 6 50 4 Q30 6 30 22Z" fill="#4a3728"/>
+        <!-- red flushed cheeks -->
+        <circle cx="34" cy="34" r="8" fill="#fca5a5" opacity="0.6"/>
+        <circle cx="66" cy="34" r="8" fill="#fca5a5" opacity="0.6"/>
+        <!-- sick eyes -->
+        <circle cx="42" cy="26" r="4" fill="#4a3728"/>
+        <circle cx="58" cy="26" r="4" fill="#4a3728"/>
+        <path d="M44 21 L40 17" stroke="#4a3728" stroke-width="1.5"/>
+        <path d="M56 21 L60 17" stroke="#4a3728" stroke-width="1.5"/>
+        <!-- runny nose -->
+        <ellipse cx="50" cy="38" rx="4" ry="3" fill="#a8d8a8"/>
+        <!-- mask/scarf -->
+        <rect x="30" y="45" width="40" height="16" rx="8" fill="#bfdbfe"/>
+        <!-- body -->
+        <rect x="18" y="58" width="64" height="65" rx="10" fill="#93c5fd"/>
+        <rect x="0" y="62" width="20" height="13" rx="6" fill="#93c5fd"/>
+        <rect x="80" y="62" width="20" height="13" rx="6" fill="#93c5fd"/>
+        <rect x="30" y="123" width="16" height="26" rx="7" fill="#1e3a5f"/>
+        <rect x="54" y="123" width="16" height="26" rx="7" fill="#1e3a5f"/>
+        <!-- drip bag -->
+        <rect x="75" y="20" width="18" height="26" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="2"/>
+        <line x1="84" y1="46" x2="84" y2="75" stroke="#60a5fa" stroke-width="2"/>
+        <text x="78" y="37" font-size="9" fill="#1d4ed8" font-weight="900">IV</text>
+      </svg>
+      <!-- arrow -->
+      <div style="font-size:28pt; color:#4ade80; font-weight:900; padding-bottom:15mm;">→</div>
+      <!-- healthy patient -->
+      <svg width="80" height="120" viewBox="0 0 100 150">
+        <circle cx="50" cy="26" r="22" fill="#FFDBB5"/>
+        <path d="M30 22 Q50 6 70 22 Q70 6 50 4 Q30 6 30 22Z" fill="#4a3728"/>
+        <!-- happy eyes -->
+        <path d="M38 24 Q42 20 46 24" fill="none" stroke="#4a3728" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M54 24 Q58 20 62 24" fill="none" stroke="#4a3728" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- big smile -->
+        <path d="M38 36 Q50 45 62 36" fill="none" stroke="#4a3728" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- healthy body -->
+        <rect x="18" y="52" width="64" height="70" rx="10" fill="#4ade80"/>
+        <rect x="0" y="56" width="20" height="13" rx="6" fill="#4ade80"/>
+        <rect x="80" y="56" width="20" height="13" rx="6" fill="#4ade80"/>
+        <!-- thumbs up hand -->
+        <circle cx="2" cy="62" r="9" fill="#FFDBB5"/>
+        <rect x="-3" y="52" width="6" height="10" rx="3" fill="#FFDBB5"/>
+        <rect x="30" y="122" width="16" height="26" rx="7" fill="#1e3a5f"/>
+        <rect x="54" y="122" width="16" height="26" rx="7" fill="#1e3a5f"/>
+        <!-- star -->
+        <text x="60" y="22" font-size="16" fill="#fbbf24">★</text>
+      </svg>
+    </div>
+
+    <div class="p4-cta">
+      <div class="p4-cta-left">두브란스 의원 · 원장 김재훈<small>서울 구로구 디지털로26길 123 지플러스타워</small></div>
+      <div class="p4-cta-tel">02-123-5678</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 5 · ABC주사 + 무좀 + 행정
+════════════════════════════════════════════════════ -->
+<div class="page p5">
+  <div class="p5-abc">
+    <div class="p5-abc-text">
+      <div class="p5-eyebrow">두브란스 3대 웰빙 주사</div>
+      <div class="p5-h1">ABC 웰빙 주사 요법</div>
+      <div class="abc-row">
+        <div class="abc-item abc-a">
+          <div class="abc-letter">A</div>
+          <div class="abc-name">알리네이트<br>마늘주사</div>
+          <div class="abc-effect">강기보기·녹피<br>근육통 완화</div>
+        </div>
+        <div class="abc-item abc-b">
+          <div class="abc-letter">B</div>
+          <div class="abc-name">베마케스트</div>
+          <div class="abc-effect">간기능 개선<br>알코올성 간질환</div>
+        </div>
+        <div class="abc-item abc-c">
+          <div class="abc-letter">C</div>
+          <div class="abc-name">치육토민<br>신데렐라주사</div>
+          <div class="abc-effect">다이어트·미백<br>집중력 증대</div>
+        </div>
+      </div>
+    </div>
+    <!-- Doctor with syringe -->
+    <svg width="88" height="130" viewBox="0 0 100 155">
+      <circle cx="50" cy="24" r="21" fill="#FFDBB5"/>
+      <path d="M30 20 Q50 5 70 20 Q70 5 50 3 Q30 5 30 20Z" fill="#333"/>
+      <rect x="18" y="48" width="64" height="70" rx="10" fill="white"/>
+      <path d="M18 48 L44 65 L44 48Z" fill="#d1d5db"/>
+      <path d="M82 48 L56 65 L56 48Z" fill="#d1d5db"/>
+      <rect x="44" y="48" width="12" height="50" fill="#bfdbfe"/>
+      <rect x="0" y="52" width="19" height="12" rx="6" fill="white"/>
+      <rect x="81" y="52" width="19" height="12" rx="6" fill="white"/>
+      <!-- holding syringe -->
+      <rect x="82" y="60" width="30" height="8" rx="4" fill="#e2e8f0"/>
+      <rect x="108" y="58" width="6" height="12" rx="2" fill="#94a3b8"/>
+      <rect x="82" y="62" width="26" height="4" rx="2" fill="#3b82f6"/>
+      <line x1="114" y1="64" x2="125" y2="55" stroke="#94a3b8" stroke-width="2"/>
+      <rect x="28" y="118" width="16" height="35" rx="7" fill="#1e3a5f"/>
+      <rect x="56" y="118" width="16" height="35" rx="7" fill="#1e3a5f"/>
+      <ellipse cx="36" cy="153" rx="14" ry="5" fill="#0f172a"/>
+      <ellipse cx="64" cy="153" rx="14" ry="5" fill="#0f172a"/>
+    </svg>
+  </div>
+
+  <div class="p5-lower">
+    <div class="mushroom-card">
+      <div class="mc-title">이제 고민 말자<br>무좀</div>
+      <!-- foot svg -->
+      <svg width="70" height="55" viewBox="0 0 100 75" style="margin:2mm 0;">
+        <ellipse cx="35" cy="55" rx="32" ry="18" fill="#FFDBB5"/>
+        <ellipse cx="18" cy="42" rx="10" ry="14" fill="#FFDBB5"/>
+        <ellipse cx="31" cy="38" rx="9" ry="14" fill="#FFDBB5"/>
+        <ellipse cx="44" cy="39" rx="8" ry="13" fill="#FFDBB5"/>
+        <ellipse cx="56" cy="41" rx="7" ry="11" fill="#FFDBB5"/>
+        <ellipse cx="66" cy="44" rx="6" ry="9" fill="#FFDBB5"/>
+        <!-- fungus spots -->
+        <circle cx="25" cy="56" r="5" fill="#a16207" opacity="0.6"/>
+        <circle cx="38" cy="60" r="4" fill="#a16207" opacity="0.5"/>
+        <circle cx="48" cy="55" r="3" fill="#a16207" opacity="0.5"/>
+      </svg>
+      <div class="mc-badge">소중한 가족에게 옮길 수도 있습니다</div>
+      <div class="mc-body">
+        발바닥·발가락 사이 가려움, 각질,<br>
+        발톱 변색 등 재발 잦은 만성 질환.<br>
+        <strong>초기에 치료할수록 완치율 높음!</strong>
+      </div>
+      <div class="mc-cta">원장님과 상담하세요</div>
+    </div>
+
+    <div class="admin-col">
+      <div class="adm-row red">
+        <div class="adm-icon">🪪</div>
+        <div class="adm-text">
+          <div class="adm-title-s">신분증을 제시해 주세요</div>
+          <div class="adm-body-s">진료 시 <strong>신분증 확인</strong>이 의무화되었습니다.<br>주민등록증·운전면허증·여권 지참</div>
+        </div>
+      </div>
+      <div class="adm-row" style="border-color:#2563eb;background:#f0f6ff;">
+        <div class="adm-icon">🧾</div>
+        <div class="adm-text">
+          <div class="adm-title-s">현금영수증 의무발행</div>
+          <div class="adm-body-s">본 의원은 현금영수증 <strong>의무발행 가맹점</strong>입니다.<br>현금 결제 시 자동 발행됩니다.</div>
+        </div>
+      </div>
+      <div class="adm-row green">
+        <div class="adm-icon">📋</div>
+        <div class="adm-text">
+          <div class="adm-title-s">수액치료 진단서 안내</div>
+          <div class="adm-body-s">수액 치료에 대한 <strong>진단서·소견서 발급은 불가</strong>합니다.</div>
+        </div>
+      </div>
+      <div class="adm-row orange">
+        <div class="adm-icon">📱</div>
+        <div class="adm-text">
+          <div class="adm-title-s">진료 예약 안내</div>
+          <div class="adm-body-s">전화 예약 시 대기 없이 빠른 진료<br><strong>T. 02-123-5678</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p5-footer">
+    <div>
+      <div class="p5-footer-name">두브란스 의원 · 원장 김재훈</div>
+      <div class="p5-footer-info">서울 구로구 디지털로26길 123 지플러스타워 · 평일 09~18시 / 토 09~13시</div>
+    </div>
+    <div class="p5-footer-tel">02-123-5678</div>
+  </div>
+</div>
+
+</body>
+</html>

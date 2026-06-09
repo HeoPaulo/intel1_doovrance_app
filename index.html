@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedQR — 약품 QR 관리 시스템</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --blue:   #2563eb;
+      --blue-l: #dbeafe;
+      --green:  #16a34a;
+      --green-l:#dcfce7;
+      --red:    #dc2626;
+      --red-l:  #fef2f2;
+      --bg:     #f1f5f9;
+      --card:   #ffffff;
+      --text:   #1e293b;
+      --muted:  #64748b;
+      --border: #e2e8f0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--blue);
+      color: #fff;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 2px 10px rgba(37,99,235,.35);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; letter-spacing: -1px; }
+    .logo span { color: #93c5fd; }
+
+    nav { display: flex; gap: 2px; }
+    nav button {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,.65);
+      padding: 7px 15px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: .18s;
+    }
+    nav button:hover, nav button.active {
+      background: rgba(255,255,255,.2);
+      color: #fff;
+    }
+
+    /* ── Layout ── */
+    main { max-width: 920px; margin: 0 auto; padding: 24px 16px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    /* ── Steps ── */
+    .steps { display: flex; align-items: center; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .step { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    .step.active { color: var(--blue); font-weight: 600; }
+    .step.done   { color: var(--green); }
+    .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .step.active .step-num { background: var(--blue); color: #fff; }
+    .step.done   .step-num { background: var(--green); color: #fff; }
+    .step-sep { color: var(--border); font-size: 14px; }
+
+    /* ── Demo badge ── */
+    .demo-badge {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Register grid ── */
+    .reg-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 620px) { .reg-grid { grid-template-columns: 1fr; } }
+
+    /* ── Camera ── */
+    .cam-wrap {
+      aspect-ratio: 4/3;
+      background: #0f172a;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cam-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cam-no {
+      color: var(--muted); text-align: center; font-size: 13px; padding: 16px;
+    }
+    .cam-no div:first-child { font-size: 32px; margin-bottom: 6px; }
+
+    /* scan line overlay */
+    .scan-overlay {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      display: none;
+    }
+    .scan-overlay.on { display: block; }
+    .scan-line {
+      position: absolute; left: 8%; right: 8%; height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      box-shadow: 0 0 8px #22c55e;
+      animation: scanMove 1.4s ease-in-out infinite;
+    }
+    @keyframes scanMove {
+      0%   { top: 10%; }
+      50%  { top: 85%; }
+      100% { top: 10%; }
+    }
+    /* corner brackets */
+    .scan-corner {
+      position: absolute; width: 28px; height: 28px;
+      border-color: #22c55e; border-style: solid;
+    }
+    .scan-corner.tl { top: 8%; left: 8%; border-width: 2px 0 0 2px; }
+    .scan-corner.tr { top: 8%; right: 8%; border-width: 2px 2px 0 0; }
+    .scan-corner.bl { bottom: 8%; left: 8%; border-width: 0 0 2px 2px; }
+    .scan-corner.br { bottom: 8%; right: 8%; border-width: 0 2px 2px 0; }
+
+    /* ── Form elements ── */
+    select, input[type="text"] {
+      width: 100%; padding: 9px 11px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px; color: var(--text);
+      background: #fff;
+      margin-bottom: 10px;
+      transition: .15s;
+    }
+    select:focus, input[type="text"]:focus {
+      outline: none; border-color: var(--blue);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 8px; border: none;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: .18s;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-blue  { background: var(--blue); color: #fff; }
+    .btn-blue:not(:disabled):hover { background: #1d4ed8; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:not(:disabled):hover { background: #15803d; }
+    .btn-ghost {
+      background: transparent; border: 1.5px solid var(--border); color: var(--text);
+    }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ── OCR result banner ── */
+    .ocr-banner {
+      background: var(--green-l);
+      border: 1px solid #bbf7d0;
+      border-radius: 8px; padding: 12px 14px; margin: 12px 0;
+      display: none;
+    }
+    .ocr-banner.show { display: block; }
+    .ocr-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: .5px; color: var(--green); margin-bottom: 3px; }
+    .ocr-name  { font-size: 20px; font-weight: 800; }
+    .ocr-sub   { font-size: 13px; color: var(--green); margin-top: 2px; }
+
+    /* loading row */
+    .loading-row {
+      display: none; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 14px; margin: 10px 0;
+    }
+    .loading-row.show { display: flex; }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border); border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .55s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── QR output ── */
+    .qr-box {
+      display: none; flex-direction: column; align-items: center; gap: 10px;
+      background: var(--bg); border-radius: 8px; padding: 16px; margin-top: 4px;
+    }
+    .qr-box.show { display: flex; }
+    .qr-id { font-size: 12px; color: var(--muted); font-family: monospace; }
+
+    /* ── Drug info card ── */
+    .verified-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--green-l); border: 1px solid #bbf7d0;
+      border-radius: 8px; padding: 10px 14px;
+      color: var(--green); font-weight: 700; font-size: 14px;
+      margin-bottom: 18px;
+    }
+    .drug-header {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .drug-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: var(--blue-l);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; flex-shrink: 0;
+    }
+    .drug-name-big { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .drug-meta-row { font-size: 13px; color: var(--muted); }
+    .badge {
+      display: inline-block; padding: 2px 9px; border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+    }
+    .badge-blue  { background: var(--blue-l); color: var(--blue); }
+    .badge-green { background: var(--green-l); color: var(--green); }
+
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+    }
+    @media (max-width: 480px) { .info-grid { grid-template-columns: 1fr; } }
+    .info-cell {
+      background: var(--bg); border-radius: 8px; padding: 11px;
+    }
+    .info-cell-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted); margin-bottom: 4px;
+    }
+    .info-cell-val { font-size: 14px; font-weight: 500; line-height: 1.4; }
+
+    .warn-box {
+      background: var(--red-l); border-radius: 8px; padding: 12px 14px;
+    }
+    .warn-title { font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+                  color: var(--red); font-weight: 700; margin-bottom: 8px; }
+    .warn-list { list-style: none; }
+    .warn-list li {
+      display: flex; align-items: baseline; gap: 7px;
+      font-size: 13px; color: #b91c1c; padding: 3px 0;
+    }
+    .warn-list li::before { content: '⚠'; font-size: 11px; flex-shrink: 0; }
+
+    /* error state */
+    .error-card {
+      border-left: 4px solid var(--red);
+    }
+    .error-title { color: var(--red); font-weight: 700; margin-bottom: 6px; font-size: 15px; }
+    .error-sub   { color: var(--muted); font-size: 14px; }
+
+    /* ── Drug list ── */
+    .list-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 0; border-bottom: 1px solid var(--border);
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-name { font-weight: 700; margin-bottom: 2px; }
+    .list-meta { font-size: 13px; color: var(--muted); }
+    .list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 40px; color: var(--muted);
+    }
+    .empty-icon { font-size: 44px; margin-bottom: 10px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1e293b; color: #fff;
+      padding: 11px 18px; border-radius: 8px; font-size: 14px;
+      transform: translateY(80px); opacity: 0;
+      transition: .28s cubic-bezier(.34,1.56,.64,1);
+      z-index: 500; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Print modal ── */
+    #print-modal {
+      position: fixed; inset: 0; z-index: 900;
+      background: rgba(0,0,0,.5);
+      display: none; align-items: center; justify-content: center;
+    }
+    #print-modal.open { display: flex; }
+    .print-inner {
+      background: #fff; border-radius: 14px; padding: 28px;
+      text-align: center; min-width: 220px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .print-inner h3 { font-size: 16px; margin-bottom: 18px; }
+    .sticker {
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 16px; display: inline-block; margin-bottom: 16px;
+    }
+    .sticker-name { font-size: 14px; font-weight: 700; margin-top: 10px; }
+    .sticker-id   { font-size: 11px; color: var(--muted); font-family: monospace; }
+    .print-actions { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
+
+    @media print {
+      body > *:not(#print-modal) { display: none !important; }
+      #print-modal { position: static; background: none; display: block !important; }
+      .print-actions, header, nav { display: none !important; }
+    }
+
+    /* ── Scanner container ── */
+    #scanner-wrap { border-radius: 8px; overflow: hidden; }
+  </style>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MedQR" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+</head>
+<body>
+
+<header>
+  <div class="logo">Med<span>QR</span></div>
+  <nav>
+    <button class="active" onclick="switchView('register', this)">등록</button>
+    <button onclick="switchView('scan', this)">스캔</button>
+    <button onclick="switchView('list', this)">약품목록</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ════════════════════════════════ 등록 뷰 ═══ -->
+  <div id="view-register" class="view active">
+
+    <div class="demo-badge">
+      🎭 <strong>시연 모드</strong> — 아래에서 약품을 선택하면 OCR 인식 과정을 시뮬레이션합니다
+    </div>
+
+    <div class="steps">
+      <div class="step active" id="s1"><div class="step-num">1</div><span>약품 선택</span></div>
+      <span class="step-sep">›</span>
+      <div class="step" id="s2"><div class="step-num">2</div><span>OCR 인식</span></div>
+      <span class="step-sep">›</span>
+      <div class="step" id="s3"><div class="step-num">3</div><span>QR 발급</span></div>
+    </div>
+
+    <div class="reg-grid">
+
+      <!-- 왼쪽: 카메라 + 약품 선택 -->
+      <div class="card">
+        <div class="card-title">카메라 피드</div>
+
+        <div class="cam-wrap" id="cam-wrap">
+          <video id="cam-video" autoplay muted playsinline></video>
+          <div class="scan-overlay" id="scan-overlay">
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">
+            시연용 약품 선택
+          </label>
+          <select id="drug-select">
+            <option value="">-- 약품을 선택하세요 --</option>
+            <option value="drug_001">타이레놀 500mg</option>
+            <option value="drug_002">판피린Q</option>
+            <option value="drug_003">게보린</option>
+            <option value="drug_004">부루펜 시럽</option>
+          </select>
+          <button class="btn btn-blue btn-full" id="ocr-btn" onclick="runOCR()">
+            📷 OCR 인식 시작
+          </button>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 결과 + QR -->
+      <div class="card">
+        <div class="card-title">인식 결과</div>
+
+        <div class="loading-row" id="ocr-loading">
+          <div class="spinner"></div>
+          <span>약품명 분석 중…</span>
+        </div>
+
+        <div class="ocr-banner" id="ocr-banner">
+          <div class="ocr-label">✓ OCR 인식 완료</div>
+          <div class="ocr-name" id="ocr-name">—</div>
+          <div class="ocr-sub" id="ocr-sub">—</div>
+        </div>
+
+        <div class="qr-box" id="qr-box">
+          <div id="qr-canvas"></div>
+          <div class="qr-id" id="qr-id-label">—</div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-green" onclick="openPrint()">🖨️ 스티커 출력</button>
+            <button class="btn btn-ghost" onclick="resetRegister()">초기화</button>
+          </div>
+        </div>
+
+        <div id="qr-placeholder" class="empty" style="padding:30px 0;">
+          <div class="empty-icon">📦</div>
+          <div style="font-size:14px;">약품을 선택 후 OCR 인식을 시작하세요</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════ 스캔 뷰 ═══ -->
+  <div id="view-scan" class="view">
+    <div class="card">
+      <div class="card-title">QR 코드 스캔</div>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:14px;">
+        약품에 부착된 QR 스티커를 카메라로 스캔하거나, ID를 직접 입력하세요.
+      </p>
+
+      <div id="scanner-wrap"></div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-blue" id="scan-start" onclick="startScanner()">📷 스캔 시작</button>
+        <button class="btn btn-ghost" id="scan-stop" style="display:none" onclick="stopScanner()">중지</button>
+      </div>
+
+      <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border);">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">또는 ID 직접 입력</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="manual-id" placeholder="drug_001" style="margin:0;flex:1;" />
+          <button class="btn btn-ghost" onclick="manualLookup()">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="scan-result"></div>
+  </div>
+
+  <!-- ════════════════════════════════ 목록 뷰 ═══ -->
+  <div id="view-list" class="view">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">등록된 약품</div>
+        <span class="badge badge-blue" id="list-count">0개</span>
+      </div>
+      <div id="list-body"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Print modal -->
+<div id="print-modal">
+  <div class="print-inner">
+    <h3>QR 스티커 출력</h3>
+    <div class="sticker">
+      <div id="print-qr"></div>
+      <div class="sticker-name" id="print-name"></div>
+      <div class="sticker-id"  id="print-id"></div>
+    </div>
+    <div class="print-actions">
+      <button class="btn btn-green" onclick="window.print()">🖨️ 인쇄</button>
+      <button class="btn btn-ghost" onclick="closePrint()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Scripts ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+        integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU"
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+        integrity="sha384-c9d8RFSL+u3exBOJ4Yp3HUJXS4znl9f+z66d1y54ig+ea249SpqR+w1wyvXz/lk+"
+        crossorigin="anonymous"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  약품 카탈로그 (실제 서비스: Firestore 컬렉션으로 교체)
+// ═══════════════════════════════════════════════════════════════
+const CATALOG = {
+  drug_001: {
+    id: 'drug_001', icon: '💊',
+    name: '타이레놀 500mg', manufacturer: '한국얀센', category: '해열진통제',
+    dosage: '1회 1~2정, 1일 3~4회 (4~6시간 간격)',
+    maxDose: '1일 4,000mg 초과 금지',
+    storage: '실온 보관 (1~30°C), 습기 차단',
+    expiry: '제조일로부터 36개월',
+    warnings: ['공복 복용 시 위장장애 주의', '알코올과 병용 금지', '간질환자 복용 금지', '15세 미만 어린이 주의']
+  },
+  drug_002: {
+    id: 'drug_002', icon: '🧴',
+    name: '판피린Q', manufacturer: '동아제약', category: '감기약',
+    dosage: '1회 1포, 1일 3회 식후 복용',
+    maxDose: '1일 3포',
+    storage: '실온 보관, 직사광선 차단',
+    expiry: '제조일로부터 24개월',
+    warnings: ['졸음 유발 — 운전 및 기계 조작 금지', '음주 금지', '임산부 복용 주의', '다른 감기약과 병용 금지']
+  },
+  drug_003: {
+    id: 'drug_003', icon: '💊',
+    name: '게보린', manufacturer: '삼진제약', category: '해열진통제',
+    dosage: '1회 1정, 1일 3회 식후 복용',
+    maxDose: '1일 3정',
+    storage: '실온 보관 (25°C 이하)',
+    expiry: '제조일로부터 36개월',
+    warnings: ['위장장애 주의', '장기복용 금지', '만 15세 미만 금지', '신장·간 질환자 주의']
+  },
+  drug_004: {
+    id: 'drug_004', icon: '🍶',
+    name: '부루펜 시럽', manufacturer: '삼일제약', category: '소아 해열제',
+    dosage: '체중 kg당 5~10mg, 6~8시간 간격',
+    maxDose: '1일 체중 kg당 40mg',
+    storage: '실온 보관, 개봉 후 6개월 이내',
+    expiry: '개봉 전 제조일로부터 36개월',
+    warnings: ['공복 복용 금지', '천식 환자 주의', '임산부 3기 금기', '탈수 상태 금기']
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  DB 레이어 (localStorage → Firebase Firestore 교체 포인트)
+//  교체 시: saveDrug   → db.collection('drugs').doc(id).set(data)
+//           getDrug    → (await db.collection('drugs').doc(id).get()).data()
+//           getAllDrugs → (await db.collection('drugs').get()).docs.map(d=>d.data())
+//           deleteDrug → db.collection('drugs').doc(id).delete()
+// ═══════════════════════════════════════════════════════════════
+function saveDrug(id, data) {
+  const store = JSON.parse(localStorage.getItem('mq_drugs') || '{}');
+  store[id] = { ...data, registeredAt: new Date().toISOString() };
+  localStorage.setItem('mq_drugs', JSON.stringify(store));
+}
+function getDrug(id) {
+  return JSON.parse(localStorage.getItem('mq_drugs') || '{}')[id] || null;
+}
+function getAllDrugs() {
+  return Object.values(JSON.parse(localStorage.getItem('mq_drugs') || '{}'));
+}
+function deleteDrug(id) {
+  const store = JSON.parse(localStorage.getItem('mq_drugs') || '{}');
+  delete store[id];
+  localStorage.setItem('mq_drugs', JSON.stringify(store));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  뷰 전환
+// ═══════════════════════════════════════════════════════════════
+function switchView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'list') renderList();
+  if (name !== 'scan') stopScanner();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  카메라 초기화
+// ═══════════════════════════════════════════════════════════════
+(async function initCam() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    document.getElementById('cam-video').srcObject = stream;
+  } catch {
+    document.getElementById('cam-wrap').innerHTML = `
+      <div class="cam-no">
+        <div>📵</div>
+        <div>카메라 접근 불가<br><small>아래에서 약품을 선택하세요</small></div>
+      </div>`;
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  OCR 시뮬레이션
+// ═══════════════════════════════════════════════════════════════
+let currentId = null;
+
+function runOCR() {
+  const id = document.getElementById('drug-select').value;
+  if (!id) { toast('약품을 먼저 선택하세요'); return; }
+  currentId = id;
+  const drug = CATALOG[id];
+
+  document.getElementById('ocr-btn').disabled = true;
+  document.getElementById('qr-placeholder').style.display = 'none';
+  document.getElementById('ocr-banner').classList.remove('show');
+  document.getElementById('qr-box').classList.remove('show');
+  document.getElementById('ocr-loading').classList.add('show');
+  document.getElementById('scan-overlay').classList.add('on');
+  setStep(2);
+
+  setTimeout(() => {
+    document.getElementById('scan-overlay').classList.remove('on');
+    document.getElementById('ocr-loading').classList.remove('show');
+
+    document.getElementById('ocr-name').textContent = drug.name;
+    document.getElementById('ocr-sub').textContent  = drug.manufacturer + ' · ' + drug.category;
+    document.getElementById('ocr-banner').classList.add('show');
+
+    setStep(3);
+    buildQR(id, drug);
+  }, 2000);
+}
+
+function buildQR(id, drug) {
+  document.getElementById('qr-canvas').innerHTML = '';
+  new QRCode(document.getElementById('qr-canvas'), {
+    text: id,
+    width: 148, height: 148,
+    colorDark: '#1e293b', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  document.getElementById('qr-id-label').textContent = id;
+  document.getElementById('qr-box').classList.add('show');
+  document.getElementById('ocr-btn').disabled = false;
+
+  // DB 저장
+  saveDrug(id, drug);
+  toast('✓ QR 코드 생성 완료');
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('s' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  });
+}
+
+function resetRegister() {
+  currentId = null;
+  document.getElementById('drug-select').value = '';
+  document.getElementById('ocr-banner').classList.remove('show');
+  document.getElementById('qr-box').classList.remove('show');
+  document.getElementById('scan-overlay').classList.remove('on');
+  document.getElementById('ocr-loading').classList.remove('show');
+  document.getElementById('ocr-btn').disabled = false;
+  document.getElementById('qr-placeholder').style.display = '';
+  setStep(1);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  출력 모달
+// ═══════════════════════════════════════════════════════════════
+function openPrint(id) {
+  const targetId = id || currentId;
+  if (!targetId) return;
+  const drug = CATALOG[targetId] || getDrug(targetId);
+  if (!drug) return;
+
+  document.getElementById('print-name').textContent = drug.name;
+  document.getElementById('print-id').textContent   = targetId;
+  document.getElementById('print-qr').innerHTML     = '';
+  new QRCode(document.getElementById('print-qr'), {
+    text: targetId,
+    width: 110, height: 110,
+    colorDark: '#000', colorLight: '#fff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  document.getElementById('print-modal').classList.add('open');
+}
+function closePrint() {
+  document.getElementById('print-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  QR 스캔
+// ═══════════════════════════════════════════════════════════════
+let scanner = null;
+
+function startScanner() {
+  document.getElementById('scan-start').style.display = 'none';
+  document.getElementById('scan-stop').style.display  = 'inline-flex';
+  document.getElementById('scanner-wrap').innerHTML   = '';
+
+  scanner = new Html5Qrcode('scanner-wrap');
+  scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: 200 },
+    (text) => { stopScanner(); showDrug(text); },
+    () => {}
+  ).catch(() => {
+    toast('카메라를 시작할 수 없습니다');
+    stopScanner();
+  });
+}
+
+function stopScanner() {
+  if (scanner) {
+    scanner.stop().catch(() => {});
+    scanner = null;
+  }
+  document.getElementById('scan-start').style.display = 'inline-flex';
+  document.getElementById('scan-stop').style.display  = 'none';
+}
+
+function manualLookup() {
+  const id = document.getElementById('manual-id').value.trim();
+  if (!id) return;
+  showDrug(id);
+}
+
+function showDrug(id) {
+  const drug = getDrug(id) || CATALOG[id];
+  const el   = document.getElementById('scan-result');
+
+  if (!drug) {
+    const card  = document.createElement('div'); card.className = 'card error-card';
+    const title = document.createElement('div'); title.className = 'error-title'; title.textContent = '⚠ 미등록 약품';
+    const sub   = document.createElement('div'); sub.className = 'error-sub';
+    const code  = document.createElement('code'); code.textContent = id;
+    sub.append('ID "', code, '" 에 해당하는 약품 정보가 없습니다.');
+    card.append(title, sub);
+    el.innerHTML = ''; el.appendChild(card);
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="verified-row">
+        <span style="font-size:18px;">✓</span>
+        약품 QR 인증됨 &nbsp;·&nbsp; ${new Date().toLocaleString('ko-KR')}
+      </div>
+
+      <div class="drug-header">
+        <div class="drug-icon">${drug.icon || '💊'}</div>
+        <div>
+          <div class="drug-name-big">${drug.name}</div>
+          <div class="drug-meta-row">
+            ${drug.manufacturer} &nbsp;<span class="badge badge-blue">${drug.category}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-cell">
+          <div class="info-cell-label">복용법</div>
+          <div class="info-cell-val">${drug.dosage}</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">최대 용량</div>
+          <div class="info-cell-val">${drug.maxDose}</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">보관 방법</div>
+          <div class="info-cell-val">${drug.storage}</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-cell-label">유효기간</div>
+          <div class="info-cell-val">${drug.expiry}</div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <div class="warn-title">주의사항</div>
+        <ul class="warn-list">
+          ${drug.warnings.map(w => `<li>${w}</li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  약품 목록
+// ═══════════════════════════════════════════════════════════════
+function renderList() {
+  const drugs = getAllDrugs();
+  document.getElementById('list-count').textContent = drugs.length + '개';
+  const body = document.getElementById('list-body');
+
+  if (drugs.length === 0) {
+    body.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">💊</div>
+        <div>등록된 약품이 없습니다</div>
+        <div style="font-size:13px;margin-top:4px;color:#94a3b8;">등록 탭에서 약품을 등록하세요</div>
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = drugs.map(d => `
+    <div class="list-row">
+      <div>
+        <div class="list-name">${d.icon || '💊'} ${d.name}</div>
+        <div class="list-meta">${d.manufacturer} · 등록: ${new Date(d.registeredAt).toLocaleDateString('ko-KR')}</div>
+      </div>
+      <div class="list-actions">
+        <button class="btn btn-ghost" style="padding:6px 11px;font-size:13px;"
+                onclick="openPrint('${d.id}')">QR</button>
+        <button class="btn btn-ghost" style="padding:6px 11px;font-size:13px;color:var(--red);border-color:#fecaca;"
+                onclick="removeDrug('${d.id}')">삭제</button>
+      </div>
+    </div>`).join('');
+}
+
+function removeDrug(id) {
+  deleteDrug(id);
+  renderList();
+  toast('삭제되었습니다');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════════════════════════
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+</script>
+  <script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "MedQR 병원 안내",
+  "short_name": "MedQR",
+  "description": "병원 안내 및 약품 QR 관리 시스템",
+  "start_url": "/kiosk.html",
+  "display": "standalone",
+  "background_color": "#f0f6ff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "환자 안내", "url": "/kiosk.html", "description": "환자용 키오스크" },
+    { "name": "직원 대시보드", "url": "/staff.html", "description": "직원용 대시보드" },
+    { "name": "약품 QR 관리", "url": "/index.html", "description": "약품 QR 등록 및 스캔" }
+  ]
+}

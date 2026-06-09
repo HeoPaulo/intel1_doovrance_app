@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR 스티커 시트</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    @page {
+      size: A4;
+      margin: 8mm;
+    }
+
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .page {
+      width: 210mm;
+      height: 297mm;
+      background: #fff;
+      padding: 8mm;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      gap: 3mm;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+    }
+
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 0.4mm solid #bbb;
+      border-radius: 1.5mm;
+      padding: 2mm 1.5mm 1.5mm;
+      gap: 1mm;
+      overflow: hidden;
+    }
+
+    .cell img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    .label {
+      font-size: 5.5pt;
+      color: #444;
+      text-align: center;
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .label strong {
+      display: block;
+      font-size: 6pt;
+      color: #111;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .page {
+        box-shadow: none;
+        width: 100%;
+        height: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page" id="sheet"></div>
+
+<script>
+const QRS = [
+  { id: 'P-2026-0001', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABfklEQVR4nO2aQWqEQBBFX0Uhyx7IAeYoerXcTI+SAwR0KfTws2g1M2Mg2bQarVrqAz/N7/J3qYnfq335AwROOeWUU07tnbKxSqAvsbqfrtSb6joFVUmSOrA6DKaGQpKkR2p9Xaeg+tnj/Wta8XEbbKzryFT5fKG9YIvcuVf1x6LGxrPiE89LTb4PAnoAimgA9+bfq/pDUK2ZmV2+LX9LMWdrXYemku8fGvzNxm2Q54lOPVJWA9CXQJBorUx7YWNdx6YYY3yIUCkidYWAQlTdGPLV7FX9IajqYzrS2nUwSYOp4ebn2pzU7HtJTTL/stz3Wahx7VN/6SCNExqYWpCvfTZqzjkRCMIInwYUkdYKn+fkpKaek6pQetdW3XjCTS3IfZ+TmueYEAajvUpW70DXoam538PU9AtRKd7ddd+vRYUIKd/7/H5lqrUSNb2Z3v27VV5qOccMHRBiSdW9RdtK1xmo55yTIk4TUuT0s1VOavmN6ofyf6Occsopp/499QWSR+AOYvlZmQAAAABJRU5ErkJggg==' },
+  { id: 'P-2026-0002', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABdklEQVR4nO2aTW7EIAyFn0v2jNQDzFHI0clRegNYVkr1ugDyN6raDQ0k9mKUWJ+UJ+M4tjVC/G7T2x8gQCmllFJKqdYpyTbkqzEWz3iqrltQjiQZspMehiTJPfX/um5BxZLjjjNkBCAiw/m6rkwNh3siPuo+UamfKBktX1v+83VdkSp5bwkgApwke7Yn0Kr6vqkc+xxxA3HhfRbgS7ZUq+r7plLs1xzn9PyU/BqcqesOFFIr6TjnexcMAUvCBeTm07eqvm8qxZ7ezgDSDwlHEi7kJl9jX4cqeR8AAIbrlEWP5WRaVd83hTK+mlJ47Fx8lpr3NaldzQGQIu6BNOFq7CtS4N6SM31h16tW1fdNYRPxVHiCKQcQSvnX2Nek1j1m6e+JzYDVuPrOqWWPiTgA7kN0rq1OHfeY2SyB6bnUolbVX4sigyF9FNm+C+fruiJ13GMmm0YALjzKoqdV9X1TL31Onq1m0Fvt76tSov+NUkoppZS6BfUNVqvv9qFK9QYAAAAASUVORK5CYII=' },
+  { id: 'P-2026-0003', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABc0lEQVR4nO2aTW6EMAyFnxukLjNSD9CjhKOHo/QAlZJ90OvCzvx0024CzGAvEIJPwvI87Ic1Qvwdy9s/IMApp5xyyqmjU2IxAagiQO1X5l3zOgWVSJLldj2QJPlIbZ/XKah61TiCVtxeg53zOhm1ytZPdEpjuQAyb/nE01K9rUQCqIAgFj27/+g6avYvQS0iInIBkL4myIxVbc7eeb00pbq/aZzLZwMfVX/c7J+bglrJxAZmBD0DYtMbGvmo2T83ZSXOCGSOZujJAjDHZsbfaz+EMt0jNiAVq7j+FCzBdT+S6rrXJmNCtxsFrvuRVPeY9Z1mauoFRP1oor5zp7zOQN2PVOs+JDPQdzyu+2FU7/cagTZhiy11vOcMpK4ekzpckUpg9zmu+6FUr32Bqr0bzWAH1/12lMx1AjNWQSqr7xS2pLTs2vn7Jv8Ieb0i9XuPCcTvSRIBQWz75XUG6rfPsQZ/HbM+a8dR4v+Ncsopp5w6BfUDFj8RNOPPuGgAAAAASUVORK5CYII=' },
+  { id: 'P-2026-0004', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABj0lEQVR4nO2YUWqFMBBFz1ThfUboArqUuHRdyluAYD4Lyu1HzCtPKO1HfUZNQBiTA7nIZZwZE7+v/u0PEBSqUIUqVKFyp2xZ9RK1Ie20u+q6BOUlSSNIYyV1VJIkPVOv13UJKjw8zhwjM6v313Vmql69G4AI291YqB8pP4K1r7zxslTyvRMQgP5Dyfx76roQ1ZuZWQP4ew0wxzJnb12npqLvV4MFrXdyVX8GylrA2mAGbkrlfvPI/HmrPyq1+L43ACesb8Z4IoIl++eq/tgUsYXyY3rtnITXBLhpabq6XNUfm0r5PlST4YYaf08/WMKt9LVbUtH3i9tHUAfEmULnpnSaq/pjU8vXfay4GTPNd5Sr+mNTMeekNFNN4IZahAZwQ+q8clV/Cup5jknfLMfR/LmrPziV5pipqq8E4SZrd9Z1JUpdSInG67PMFLak1jNkvADcYOqbsdSYr6BcKmxgNvxYxXRj7c66zkwtvo8zBSoMNyDC+wTMpc7ZklrPMRUfN6VoJ12FKlShClWo/6W+APaQsTIzz7+kAAAAAElFTkSuQmCC' },
+  { id: 'P-2026-0005', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABfElEQVR4nO2aTW6DMBCFv2nYww16FOdqPVJvAEfpASrZy0qg14VNQpNK7YafxOMFktEn8fRkZh4jTPy9hpd/QOCUU0455dTRKSurwc5MBmm+c95VVxVUkCTFctPOnCRJ+kltr6sKKs1nfOhO2XEza/bXVROlnsk2fWK9VHOzN9qT7sw/qvrHpmbvWwEJRCrOLz+6jqr+KajBzMy60maBKcecvXU9NZXP/fWMizRZeQ321FUDRY6SQWPZB0nQSoRYtuqPqv6xKa4xXn07IsWSMQmxhHz3fk2qOJ4aGDqQIuitm7zer0nlem+AEQRG+2miFUYb99NVA0UpK7Ec/nzpAYJGvOasSM3ez2vZYcF77ZrUotdCjvbLXuver08t5pjtl+WMCd5rN6Euc0xSA+HD7Ddqe13PTN3O0gjvHfm7dni91KKjqn9s6tZ75QFD6spULfT76KqBuswUdImXJWOW3Om9djXqLueECJLGecTg3q9Gmf8b5ZRTTjlVBfUNdVzpcP3JSP8AAAAASUVORK5CYII=' },
+  { id: 'P-2026-0006', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABkklEQVR4nO2YQYrcMBBFX40MWcqQA+Qo8s3C3Mw+yhygwVoG1PwsLPV0DGFm47bbXVoYW3qgj/iUv8rE12N6+wYETjnllFNOHZ2yOjpsyGaQ28ywq66XoJIkaQa992ADQZKkf6nH63oJKt88HuuJm1m3v64zU93q24gb7+jUf6n0YfbYHV+War6PAjIw9aEYwP2l66jqT0FNZmbWA2kG4LrEnL11nZpafL9qLGg9c1T1z02xRMkkqVk+tHOPdUHjUdU/N9V8n3sgilpl4qUT2Zr9j6r+uanm+zkIbjeqpALEgvt+Q6r6fvpVII1wny/zD7/XbklV3xML0lxLvUaCNMayrLrvt6TqsS9FpmC/VYDcYcOuus5NLTWnVZpQmPrL7dd7aTero6o/BfXZxxwJYurrssZ9dZ2auuUc+Aw7dw/POY+jNMZSX5P+eE9hS2rdQ64jXkxTP3vGfAQVpVrbsxlpDrIBsGFnXWemqu+npboELOnaifyzAFfPOVtS6z6mlt9sLOhu/qjqnXLKKaec+i71FwvyuGtrf+AgAAAAAElFTkSuQmCC' },
+  { id: 'P-2026-0007', b64: 'iVBORw0KGgoAAAANSUhEUgAAASIAAAEiAQAAAAB1xeIbAAABo0lEQVR4nO2ZQYrjMBBFX40EvYyhD9BHkW82V7OOMgcYsJYBhT8LSelJmmF60WkrtrQIRDzwo1SJqsom/r/ij09AMKhBDWpQg+qdsro8ZtPFbE5tZ97U6xBUkCStoAUnwEmSdEt9v9chqFRz3H7+8mXHzPz2Xnum/N13xbf82CcO6t9Uuj+Ohz/xqFQL9ElAAgvrKyLB301Xr/a7oKKZmU1102YupczZ2mvXVMn79xwX6WK6zfp+7fdA2Zw8kMyIU817SB6bN/XaN3XN+7PBKXsL62smGsDpWvH0av/cVL1r4wyQPIIacQOXtZXXEShUV6Z+rE6tza3NrZZe7Z+bKrEnrE6EFQirkxaAUM5jxP5R1PX/PiMQFt/OJnCZOK1jnvNIqsS+1fEul+qG028DfLtse7XfBfU+xyzDzPQiSefRW30H1eaYN/X9i8pe9/Y7oUKrbmwGyq3bg9cOqfuhpZWOKk0oThhh2cbrCNT9HFMAFpbsCbpewr3aPzfV+toSZNe62TQBXNrJ9Gr/3NTHOSZQfwblze02XoMa1KAGNaivpf4AJUeyj4niFwwAAAAASUVORK5CYII=' },
+];
+
+const sheet = document.getElementById('sheet');
+const total = 35; // 5열 × 7행
+
+for (let i = 0; i < total; i++) {
+  const qr = QRS[i % QRS.length];
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <img src="data:image/png;base64,${qr.b64}" alt="${qr.id}" />
+    <div class="label"><strong>${qr.id}</strong></div>
+  `;
+  sheet.appendChild(cell);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>병원 안내 키오스크</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --blue:   #2563eb; --blue-d: #1d4ed8; --blue-l: #dbeafe;
+      --green:  #16a34a; --green-l: #dcfce7;
+      --red:    #ef4444; --red-l: #fef2f2;
+      --orange: #f97316; --orange-l: #fff7ed;
+      --bg:     #f0f6ff; --card: #fff;
+      --text:   #1e293b; --muted: #64748b; --border: #e2e8f0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    header {
+      width: 100%; background: var(--blue); color: #fff;
+      padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(37,99,235,.4); position: sticky; top: 0; z-index: 50;
+    }
+    .h-logo { font-size: 22px; font-weight: 800; display:flex; align-items:baseline; gap:8px; }
+    .h-logo > span:first-child { color: #93c5fd; }
+    .h-logo-sub { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.65); letter-spacing:.02em; }
+    .h-right { display: flex; align-items: center; gap: 12px; }
+    .h-clock { font-size: 14px; color: rgba(255,255,255,.75); }
+    .h-staff-link {
+      font-size: 12px; color: rgba(255,255,255,.6);
+      text-decoration: none; border: 1px solid rgba(255,255,255,.3);
+      padding: 4px 10px; border-radius: 6px;
+    }
+    .h-staff-link:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+    .lang-sel { display:flex; gap:3px; }
+    .lang-btn {
+      background:transparent; border:1.5px solid rgba(255,255,255,.3);
+      border-radius:6px; font-size:15px; padding:2px 7px;
+      cursor:pointer; transition:.15s; line-height:1.3;
+    }
+    .lang-btn:hover { background:rgba(255,255,255,.15); }
+    .lang-btn.active { background:rgba(255,255,255,.2); border-color:#fff; }
+
+    .container { width: 100%; max-width: 720px; flex: 1; display: flex; flex-direction: column; padding: 20px 16px 0; gap: 14px; }
+
+    .robot-card {
+      background: var(--card); border-radius: 18px; padding: 20px;
+      text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    }
+    .robot-face {
+      width: 80px; height: 80px; border-radius: 50%; background: #fff;
+      margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 36px; position: relative; overflow: hidden;
+      box-shadow: 0 0 0 3px var(--blue-l);
+    }
+    .robot-face img { width: 100%; height: 100%; object-fit: contain; }
+    .robot-face.listening { animation: pring-blue  1.2s ease-out infinite; }
+    .robot-face.speaking  { animation: pring-green 0.8s ease-out infinite; }
+    .robot-face.staff-mode { box-shadow: 0 0 0 3px var(--orange), 0 0 0 3px var(--blue-l); }
+    @keyframes pring-blue  { 0%{box-shadow:0 0 0 3px var(--blue-l),0 0 0 4px var(--blue)}   100%{box-shadow:0 0 0 3px var(--blue-l),0 0 0 14px rgba(37,99,235,0)} }
+    @keyframes pring-green { 0%{box-shadow:0 0 0 3px var(--blue-l),0 0 0 4px var(--green)}  100%{box-shadow:0 0 0 3px var(--blue-l),0 0 0 14px rgba(22,163,74,0)} }
+
+    .status-main { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .status-sub  { font-size: 13px; color: var(--muted); }
+    .mode-badge {
+      display: inline-block; margin-top: 8px; padding: 3px 12px;
+      border-radius: 99px; font-size: 12px; font-weight: 700;
+    }
+    .mode-badge.ai    { background: var(--blue-l);   color: var(--blue); }
+    .mode-badge.staff { background: var(--orange-l); color: var(--orange); }
+
+    .chat-wrap {
+      background: var(--card); border-radius: 16px; padding: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+      flex: 1; overflow-y: auto; max-height: 300px; min-height: 140px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .chat-empty { flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px; text-align:center; line-height:1.7; }
+
+    .bubble-row { display:flex; gap:8px; align-items:flex-end; }
+    .bubble-row.user { flex-direction:row-reverse; }
+    .bav { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; background:var(--blue-l); }
+    .bubble-row.user .bav { background:#e0f2fe; }
+    .bubble { max-width:78%; padding:9px 13px; border-radius:14px; font-size:14px; line-height:1.55; }
+    .bubble-row.bot      .bubble { background:var(--blue-l); color:var(--text); border-bottom-left-radius:4px; }
+    .bubble-row.user     .bubble { background:var(--blue);   color:#fff;        border-bottom-right-radius:4px; }
+    .bubble-row.staff-rep .bubble { background:var(--orange-l); color:var(--text); border-bottom-left-radius:4px; border:1px solid #fed7aa; }
+    .bubble.typing { display:flex; gap:4px; align-items:center; padding:10px 14px; }
+    .dot { width:6px; height:6px; border-radius:50%; background:var(--blue); animation:bounce .9s infinite; }
+    .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+    @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+    .input-card {
+      background: var(--card); border-radius: 16px; padding: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07); margin-bottom: 4px;
+    }
+    .mode-tabs { display:flex; background:var(--bg); border-radius:10px; padding:3px; margin-bottom:12px; gap:3px; }
+    .mode-tab {
+      flex:1; padding:8px; border:none; border-radius:8px; font-size:13px; font-weight:600;
+      cursor:pointer; transition:.18s; background:transparent; color:var(--muted);
+    }
+    .mode-tab.active-ai    { background:var(--blue);   color:#fff; }
+    .mode-tab.active-staff { background:var(--orange); color:#fff; }
+
+    .text-row { display:flex; gap:8px; margin-bottom:10px; }
+    .text-input {
+      flex:1; height:44px; border:1.5px solid var(--border); border-radius:10px;
+      padding:0 13px; font-size:14px; color:var(--text); background:#fff; transition:.15s;
+    }
+    .text-input:focus { outline:none; border-color:var(--blue); }
+    .btn { height:44px; border-radius:10px; border:none; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:.18s; padding:0 14px; }
+    .btn-blue  { background:var(--blue);  color:#fff; }
+    .btn-blue:hover { background:var(--blue-d); }
+    .btn-ghost { background:transparent; border:1.5px solid var(--border); color:var(--text); }
+    .btn-ghost:hover { border-color:var(--blue); color:var(--blue); }
+    .btn-mic { background:var(--blue); color:#fff; padding:0 16px; }
+    .btn-mic.listening { background:var(--red); animation:micpulse 1.5s infinite; }
+    @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 10px rgba(239,68,68,0)}}
+
+    .quick-btns { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+    .qbtn { padding:5px 12px; border-radius:99px; border:1.5px solid var(--border); background:var(--card); font-size:12px; cursor:pointer; color:var(--text); transition:.18s; }
+    .qbtn:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-l); }
+
+    .tts-row { display:flex; align-items:center; justify-content:flex-end; gap:7px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+    .voice-select { font-size:11px; border:1px solid var(--border); border-radius:6px; padding:2px 6px; color:var(--text); background:var(--card); max-width:160px; }
+    .toggle { width:36px; height:20px; background:var(--border); border-radius:99px; position:relative; cursor:pointer; transition:.2s; border:none; }
+    .toggle.on { background:var(--green); }
+    .toggle::after { content:''; position:absolute; width:14px; height:14px; background:#fff; border-radius:50%; top:3px; left:3px; transition:.2s; }
+    .toggle.on::after { left:19px; }
+
+    .bottom-bar { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:24px; }
+    .call-btn {
+      border:none; border-radius:14px; padding:16px 8px; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      font-size:13px; font-weight:700; transition:.18s;
+    }
+    .call-btn .icon { font-size:26px; }
+    .call-btn.robot   { background:#ede9fe; color:#7c3aed; }
+    .call-btn.robot:hover  { background:#ddd6fe; }
+    .call-btn.nurse   { background:var(--red-l);   color:var(--red); }
+    .call-btn.nurse:hover  { background:#fee2e2; }
+    .call-btn.suggest { background:var(--green-l); color:var(--green); }
+    .call-btn.suggest:hover { background:#bbf7d0; }
+    .call-btn.called  { opacity:.6; cursor:not-allowed; }
+
+    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+    .modal-bg.open { display:flex; }
+    .modal { background:#fff; border-radius:18px; padding:24px; width:100%; max-width:480px; }
+    .modal-title { font-size:18px; font-weight:800; margin-bottom:16px; }
+    .modal textarea {
+      width:100%; height:120px; border:1.5px solid var(--border); border-radius:10px;
+      padding:12px; font-size:14px; font-family:inherit; resize:none;
+      color:var(--text); margin-bottom:12px;
+    }
+    .modal textarea:focus { outline:none; border-color:var(--blue); }
+    .modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+
+    .staff-waiting {
+      background:var(--orange-l); border:1px solid #fed7aa;
+      border-radius:10px; padding:10px 14px; font-size:13px; color:#9a3412;
+      display:none; margin-bottom:10px; text-align:center;
+    }
+    .staff-waiting.show { display:block; }
+  </style>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MedQR 안내" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+</head>
+<body>
+
+<header>
+  <div class="h-logo">두브란<span>스</span><span class="h-logo-sub" id="h-title-text">병원 안내</span></div>
+  <div class="h-right">
+    <div class="lang-sel">
+      <button class="lang-btn active" onclick="setLanguage('ko')">🇰🇷</button>
+      <button class="lang-btn" onclick="setLanguage('en')">🇺🇸</button>
+      <button class="lang-btn" onclick="setLanguage('zh')">🇨🇳</button>
+      <button class="lang-btn" onclick="setLanguage('ja')">🇯🇵</button>
+    </div>
+    <div class="h-clock" id="clock">--:--</div>
+    <a href="staff.html" target="_blank" class="h-staff-link">직원용 →</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="robot-card">
+    <div class="robot-face" id="robot-face"><img src="doovrance_logo.png" alt="두브란스 로고" /></div>
+    <div class="status-main" id="status-main">무엇을 도와드릴까요?</div>
+    <div class="status-sub"  id="status-sub">아래 버튼을 눌러 질문해주세요</div>
+    <div class="mode-badge ai" id="mode-badge">🤖 AI 답변 모드</div>
+  </div>
+
+  <div class="chat-wrap" id="chat-wrap">
+    <div class="chat-empty" id="chat-empty">
+      아직 대화가 없습니다.<br>질문을 입력하거나 말씀해주세요 😊
+    </div>
+  </div>
+
+  <div class="input-card">
+    <div class="staff-waiting" id="staff-waiting">
+      ⏳ 직원 연결 대기 중… 잠시만 기다려주세요
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active-ai" id="tab-ai"    onclick="setMode('ai')">🤖 AI 답변</button>
+      <button class="mode-tab"           id="tab-staff" onclick="setMode('staff')">👩‍⚕️ 직원 연결</button>
+    </div>
+
+    <div class="text-row">
+      <input type="text" class="text-input" id="text-input"
+             placeholder="질문을 입력하세요…"
+             onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button class="btn btn-mic" id="btn-mic" onclick="toggleSTT()">🎤</button>
+      <button class="btn btn-blue" id="btn-send" onclick="sendMessage()">전송</button>
+    </div>
+
+    <div class="quick-btns">
+      <button class="qbtn" id="qbtn-reception" onclick="quickSend('Reception')">📋 접수처</button>
+      <button class="qbtn" id="qbtn-dept"      onclick="quickSend('Dept')">🏥 진료과</button>
+      <button class="qbtn" id="qbtn-hours"     onclick="quickSend('Hours')">🕐 운영시간</button>
+      <button class="qbtn" id="qbtn-toilet"    onclick="quickSend('Toilet')">🚻 화장실</button>
+    </div>
+
+    <div class="tts-row">
+      <select class="voice-select" id="voice-select" onchange="setVoice(this.value)">
+        <option value="">목소리 선택</option>
+      </select>
+      <span id="voice-label">음성 응답</span>
+      <button class="toggle on" id="tts-toggle" onclick="toggleTTS()"></button>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="call-btn robot"  id="btn-robot" onclick="callRobot()">
+      <span class="icon">🤖</span><span id="label-robot">로봇 호출</span>
+    </button>
+    <button class="call-btn suggest" onclick="openSuggest()">
+      <span class="icon">📝</span><span id="label-suggest">건의함</span>
+    </button>
+    <button class="call-btn nurse"  id="btn-nurse" onclick="callNurse()">
+      <span class="icon">🔔</span><span id="label-nurse">간호사 호출</span>
+    </button>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="suggest-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-suggest-title">📝 건의함</div>
+    <textarea id="suggest-text" placeholder="불편하신 사항이나 건의사항을 자유롭게 작성해주세요."></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" id="btn-cancel" onclick="closeSuggest()">취소</button>
+      <button class="btn btn-blue"  id="btn-submit" onclick="submitSuggest()">제출</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const OLLAMA_URL   = 'http://localhost:11434/api/chat';
+const OLLAMA_MODEL = 'gemma3:4b';
+
+const HOSPITAL_INFO = {
+  ko: `당신은 병원 안내 로봇 "메디"입니다.
+환자를 따뜻하고 친절하게 안내하는 것이 역할입니다.
+답변은 간결하고 명확하게 2~3문장 이내로 합니다.
+모르는 내용은 "안내데스크에 문의해주세요"라고 답합니다.
+
+[병원 안내 정보]
+- 병원명: MedQR 종합병원
+- 접수처: 1층 입구에서 직진 20m 정면
+- 내과: 2층 201호 / 정형외과: 3층 301호 / 소아과: 2층 205호
+- 약국: 1층 출구 옆
+- 화장실: 각 층 엘리베이터 옆
+- 운영시간: 평일 09:00~18:00, 토요일 09:00~13:00, 일·공휴일 휴진
+- 주차장: 지하 1~2층 (2시간 무료)
+- 응급실: 1층 우측, 24시간 운영`,
+
+  en: `You are "Medi," the hospital information robot.
+Your role is to guide patients warmly and kindly.
+Keep answers brief and clear, within 2–3 sentences.
+If you don't know something, say "Please ask at the information desk."
+
+[Hospital Information]
+- Hospital: MedQR General Hospital
+- Reception: 20m straight ahead from the 1st floor entrance
+- Internal Medicine: 2F Room 201 / Orthopedics: 3F Room 301 / Pediatrics: 2F Room 205
+- Pharmacy: Next to the 1st floor exit
+- Restrooms: Next to the elevator on each floor
+- Hours: Weekdays 09:00–18:00, Saturday 09:00–13:00, Closed Sundays & holidays
+- Parking: B1–B2 (2 hours free)
+- Emergency: 1st floor right side, open 24 hours`,
+
+  zh: `您是医院向导机器人"Medi"。
+您的职责是温暖、友好地为患者提供引导。
+回答请简洁明了，控制在2~3句以内。
+不知道的内容请回答"请在服务台询问"。
+
+[医院信息]
+- 医院名：MedQR综合医院
+- 挂号处：从1楼入口直行20米
+- 内科：2楼201室 / 整形外科：3楼301室 / 儿科：2楼205室
+- 药房：1楼出口旁边
+- 洗手间：每层电梯旁边
+- 营业时间：工作日09:00~18:00，周六09:00~13:00，周日及节假日休息
+- 停车场：地下1~2层（免费2小时）
+- 急诊室：1楼右侧，24小时运营`,
+
+  ja: `あなたは病院案内ロボット「メディ」です。
+患者様を温かく親切にご案内するのが役割です。
+回答は簡潔・明瞭に2〜3文以内でお願いします。
+わからないことは「インフォメーションデスクにお問い合わせください」とお答えします。
+
+[病院案内情報]
+- 病院名：MedQR総合病院
+- 受付：1階入口から直進20m
+- 内科：2階201号室 / 整形外科：3階301号室 / 小児科：2階205号室
+- 薬局：1階出口横
+- トイレ：各階エレベーター横
+- 診療時間：平日09:00〜18:00、土曜09:00〜13:00、日曜・祝日休診
+- 駐車場：地下1〜2階（2時間無料）
+- 救急室：1階右側、24時間営業`,
+};
+
+const LANG_TEXT = {
+  ko: {
+    titleText:'병원 안내', statusMain:'무엇을 도와드릴까요?', statusSub:'아래 버튼을 눌러 질문해주세요',
+    chatEmpty:'아직 대화가 없습니다.<br>질문을 입력하거나 말씀해주세요 😊',
+    staffWaiting:'⏳ 직원 연결 대기 중… 잠시만 기다려주세요',
+    tabAI:'🤖 AI 답변', tabStaff:'👩‍⚕️ 직원 연결',
+    badgeAI:'🤖 AI 답변 모드', badgeStaff:'👩‍⚕️ 직원 연결 모드',
+    placeholder:'질문을 입력하세요…', placeholderStaff:'직원에게 전달할 메시지를 입력하세요…',
+    send:'전송',
+    quickReception:'📋 접수처', quickDept:'🏥 진료과', quickHours:'🕐 운영시간', quickToilet:'🚻 화장실',
+    quickSendReception:'접수처가 어디에 있나요?', quickSendDept:'진료과 안내해주세요',
+    quickSendHours:'운영시간이 어떻게 되나요?', quickSendToilet:'화장실이 어디에 있나요?',
+    voiceLabel:'음성 응답', voiceDefault:'기본 목소리',
+    btnRobot:'로봇 호출', btnSuggest:'건의함', btnNurse:'간호사 호출',
+    modalTitle:'📝 건의함', modalPlaceholder:'불편하신 사항이나 건의사항을 자유롭게 작성해주세요.',
+    cancel:'취소', submit:'제출',
+    staffConnected:'직원 연결 모드입니다. 메시지를 입력하시면 담당 직원에게 전달됩니다.',
+    robotCalled:'🤖 로봇을 호출했습니다. 잠시만 기다려주세요.',
+    robotCalledSpeak:'로봇을 호출했습니다. 잠시만 기다려주세요.',
+    nurseCalled:'🔔 간호사를 호출했습니다. 잠시만 기다려주세요.',
+    nurseCalledSpeak:'간호사를 호출했습니다. 잠시만 기다려주세요.',
+    called:'호출됨', suggestDone:'건의사항이 접수되었습니다. 소중한 의견 감사합니다 😊',
+    thinking:'답변 중…', errPrefix:'오류: ', sttLang:'ko-KR', ttsLang:'ko-KR',
+  },
+  en: {
+    titleText:'Hospital Guide', statusMain:'How can I help you?', statusSub:'Tap a button below to ask',
+    chatEmpty:'No messages yet.<br>Type or speak your question 😊',
+    staffWaiting:'⏳ Connecting to staff… Please wait',
+    tabAI:'🤖 AI Answer', tabStaff:'👩‍⚕️ Staff',
+    badgeAI:'🤖 AI Mode', badgeStaff:'👩‍⚕️ Staff Mode',
+    placeholder:'Type your question…', placeholderStaff:'Enter message for staff…',
+    send:'Send',
+    quickReception:'📋 Reception', quickDept:'🏥 Departments', quickHours:'🕐 Hours', quickToilet:'🚻 Restroom',
+    quickSendReception:'Where is the reception?', quickSendDept:'Tell me about the departments',
+    quickSendHours:'What are the operating hours?', quickSendToilet:'Where is the restroom?',
+    voiceLabel:'Voice', voiceDefault:'Default voice',
+    btnRobot:'Call Robot', btnSuggest:'Feedback', btnNurse:'Call Nurse',
+    modalTitle:'📝 Feedback', modalPlaceholder:'Please write your feedback or concerns freely.',
+    cancel:'Cancel', submit:'Submit',
+    staffConnected:'You are now in staff mode. Your message will be forwarded to a staff member.',
+    robotCalled:'🤖 Robot has been called. Please wait.',
+    robotCalledSpeak:'Robot has been called. Please wait.',
+    nurseCalled:'🔔 Nurse has been called. Please wait.',
+    nurseCalledSpeak:'Nurse has been called. Please wait.',
+    called:'Called', suggestDone:'Your feedback has been submitted. Thank you 😊',
+    thinking:'Thinking…', errPrefix:'Error: ', sttLang:'en-US', ttsLang:'en-US',
+  },
+  zh: {
+    titleText:'医院向导', statusMain:'我能帮您什么？', statusSub:'请点击下方按钮提问',
+    chatEmpty:'暂无对话。<br>请输入问题或说话 😊',
+    staffWaiting:'⏳ 正在连接工作人员，请稍候',
+    tabAI:'🤖 AI解答', tabStaff:'👩‍⚕️ 工作人员',
+    badgeAI:'🤖 AI模式', badgeStaff:'👩‍⚕️ 工作人员模式',
+    placeholder:'请输入您的问题…', placeholderStaff:'请输入给工作人员的消息…',
+    send:'发送',
+    quickReception:'📋 挂号处', quickDept:'🏥 科室', quickHours:'🕐 营业时间', quickToilet:'🚻 洗手间',
+    quickSendReception:'挂号处在哪里？', quickSendDept:'请介绍科室',
+    quickSendHours:'营业时间是什么时候？', quickSendToilet:'洗手间在哪里？',
+    voiceLabel:'语音', voiceDefault:'默认语音',
+    btnRobot:'呼叫机器人', btnSuggest:'建议箱', btnNurse:'呼叫护士',
+    modalTitle:'📝 建议箱', modalPlaceholder:'请随意写下您的意见或建议。',
+    cancel:'取消', submit:'提交',
+    staffConnected:'您已进入工作人员模式，消息将转发给工作人员。',
+    robotCalled:'🤖 机器人已呼叫，请稍候。',
+    robotCalledSpeak:'机器人已呼叫，请稍候。',
+    nurseCalled:'🔔 护士已呼叫，请稍候。',
+    nurseCalledSpeak:'护士已呼叫，请稍候。',
+    called:'已呼叫', suggestDone:'建议已提交，感谢您的宝贵意见 😊',
+    thinking:'回答中…', errPrefix:'错误：', sttLang:'zh-CN', ttsLang:'zh-CN',
+  },
+  ja: {
+    titleText:'病院案内', statusMain:'ご用件をどうぞ', statusSub:'下のボタンを押してご質問ください',
+    chatEmpty:'まだ会話はありません。<br>質問を入力または話しかけてください 😊',
+    staffWaiting:'⏳ スタッフに接続中…しばらくお待ちください',
+    tabAI:'🤖 AI回答', tabStaff:'👩‍⚕️ スタッフ接続',
+    badgeAI:'🤖 AIモード', badgeStaff:'👩‍⚕️ スタッフモード',
+    placeholder:'ご質問を入力してください…', placeholderStaff:'スタッフへのメッセージを入力してください…',
+    send:'送信',
+    quickReception:'📋 受付', quickDept:'🏥 診療科', quickHours:'🕐 診療時間', quickToilet:'🚻 トイレ',
+    quickSendReception:'受付はどこですか？', quickSendDept:'診療科を教えてください',
+    quickSendHours:'診療時間はいつですか？', quickSendToilet:'トイレはどこですか？',
+    voiceLabel:'音声応答', voiceDefault:'デフォルト',
+    btnRobot:'ロボット呼出', btnSuggest:'ご意見箱', btnNurse:'看護師呼出',
+    modalTitle:'📝 ご意見箱', modalPlaceholder:'ご不満やご意見を自由にお書きください。',
+    cancel:'キャンセル', submit:'送信',
+    staffConnected:'スタッフ接続モードです。メッセージを入力するとスタッフに転送されます。',
+    robotCalled:'🤖 ロボットを呼び出しました。しばらくお待ちください。',
+    robotCalledSpeak:'ロボットを呼び出しました。しばらくお待ちください。',
+    nurseCalled:'🔔 看護師を呼び出しました。しばらくお待ちください。',
+    nurseCalledSpeak:'看護師を呼び出しました。しばらくお待ちください。',
+    called:'呼出済', suggestDone:'ご意見を受け付けました。ありがとうございます 😊',
+    thinking:'回答中…', errPrefix:'エラー：', sttLang:'ja-JP', ttsLang:'ja-JP',
+  },
+};
+
+let currentLang = 'ko';
+let mode        = 'ai';
+let history     = [];
+let ttsEnabled  = true;
+let isListening = false;
+let recognition = null;
+
+const ch = new BroadcastChannel('medqr-hospital');
+ch.onmessage = (e) => {
+  const { type, text } = e.data;
+  if (type === 'staff-reply') {
+    removeWaiting();
+    addBubble('staff-rep', `👩‍⚕️ ${text}`);
+    if (ttsEnabled) speak(text);
+  }
+};
+
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+}, 1000);
+
+function setLanguage(lang) {
+  currentLang = lang;
+  const t = LANG_TEXT[lang];
+
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.lang-btn[onclick="setLanguage('${lang}')"]`).classList.add('active');
+
+  document.getElementById('h-title-text').textContent = t.titleText;
+  document.getElementById('status-main').textContent  = t.statusMain;
+  document.getElementById('status-sub').textContent   = t.statusSub;
+
+  const chatEmpty = document.getElementById('chat-empty');
+  if (chatEmpty) chatEmpty.innerHTML = t.chatEmpty;
+
+  document.getElementById('staff-waiting').textContent = t.staffWaiting;
+  document.getElementById('tab-ai').innerHTML           = t.tabAI;
+  document.getElementById('tab-staff').innerHTML        = t.tabStaff;
+
+  const badge = document.getElementById('mode-badge');
+  badge.textContent = mode === 'ai' ? t.badgeAI : t.badgeStaff;
+
+  document.getElementById('text-input').placeholder =
+    mode === 'ai' ? t.placeholder : t.placeholderStaff;
+  document.getElementById('btn-send').textContent = t.send;
+
+  document.getElementById('qbtn-reception').innerHTML = t.quickReception;
+  document.getElementById('qbtn-dept').innerHTML      = t.quickDept;
+  document.getElementById('qbtn-hours').innerHTML     = t.quickHours;
+  document.getElementById('qbtn-toilet').innerHTML    = t.quickToilet;
+
+  document.getElementById('voice-label').textContent = t.voiceLabel;
+
+  if (!document.getElementById('btn-robot').classList.contains('called')) {
+    document.getElementById('btn-robot').innerHTML =
+      `<span class="icon">🤖</span><span id="label-robot">${t.btnRobot}</span>`;
+  }
+  document.getElementById('label-suggest').textContent = t.btnSuggest;
+  if (!document.getElementById('btn-nurse').classList.contains('called')) {
+    document.getElementById('btn-nurse').innerHTML =
+      `<span class="icon">🔔</span><span id="label-nurse">${t.btnNurse}</span>`;
+  }
+
+  document.getElementById('modal-suggest-title').textContent = t.modalTitle;
+  document.getElementById('suggest-text').placeholder        = t.modalPlaceholder;
+  document.getElementById('btn-cancel').textContent          = t.cancel;
+  document.getElementById('btn-submit').textContent          = t.submit;
+
+  loadVoices();
+  history = [];
+}
+
+function setMode(m) {
+  mode = m;
+  const t      = LANG_TEXT[currentLang];
+  const tabAI  = document.getElementById('tab-ai');
+  const tabStaff = document.getElementById('tab-staff');
+  const badge  = document.getElementById('mode-badge');
+  const face   = document.getElementById('robot-face');
+
+  if (m === 'ai') {
+    tabAI.className    = 'mode-tab active-ai';
+    tabStaff.className = 'mode-tab';
+    badge.className    = 'mode-badge ai';
+    badge.textContent  = t.badgeAI;
+    face.classList.remove('staff-mode');
+    document.getElementById('text-input').placeholder = t.placeholder;
+  } else {
+    tabAI.className    = 'mode-tab';
+    tabStaff.className = 'mode-tab active-staff';
+    badge.className    = 'mode-badge staff';
+    badge.textContent  = t.badgeStaff;
+    face.classList.add('staff-mode');
+    document.getElementById('text-input').placeholder = t.placeholderStaff;
+    addBubble('bot', t.staffConnected);
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('text-input');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('chat-empty')?.remove();
+  addBubble('user', text);
+
+  const t = LANG_TEXT[currentLang];
+
+  if (mode === 'staff') {
+    ch.postMessage({ type: 'patient-message', text, timestamp: Date.now() });
+    document.getElementById('staff-waiting').classList.add('show');
+  } else {
+    const tid = addTyping();
+    setStatus('thinking', t.thinking, '');
+    try {
+      const answer = await callOllama(text);
+      removeTyping(tid);
+      addBubble('bot', answer);
+      setStatus('idle', t.statusMain, '');
+      if (ttsEnabled) speak(answer);
+    } catch(err) {
+      removeTyping(tid);
+      addBubble('bot', t.errPrefix + err.message);
+      setStatus('idle', t.statusMain, '');
+    }
+  }
+}
+
+function removeWaiting() {
+  document.getElementById('staff-waiting').classList.remove('show');
+}
+
+async function callOllama(text) {
+  history.push({ role: 'user', content: text });
+  if (history.length > 20) history = history.slice(-20);
+
+  const messages = [
+    { role: 'system', content: HOSPITAL_INFO[currentLang] },
+    ...history
+  ];
+
+  const res = await fetch(OLLAMA_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: OLLAMA_MODEL, messages, stream: false })
+  });
+  if (!res.ok) throw new Error(res.status);
+  const data  = await res.json();
+  const reply = data.message?.content || LANG_TEXT[currentLang].errPrefix + 'no response';
+  history.push({ role: 'assistant', content: reply });
+  return reply;
+}
+
+function quickSend(key) {
+  document.getElementById('text-input').value = LANG_TEXT[currentLang]['quickSend' + key];
+  sendMessage();
+}
+
+function toggleSTT() { isListening ? stopSTT() : startSTT(); }
+function startSTT() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Chrome 브라우저를 사용해주세요.'); return; }
+  recognition = new SR();
+  recognition.lang = LANG_TEXT[currentLang].sttLang;
+  recognition.interimResults = true;
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('btn-mic').classList.add('listening');
+    setRobotState('listening');
+  };
+  recognition.onresult = (e) => {
+    let txt = '';
+    for (let r of e.results) txt += r[0].transcript;
+    document.getElementById('text-input').value = txt;
+  };
+  recognition.onend = () => {
+    stopSTT();
+    const txt = document.getElementById('text-input').value.trim();
+    if (txt) sendMessage();
+  };
+  recognition.onerror = () => stopSTT();
+  recognition.start();
+}
+function stopSTT() {
+  isListening = false;
+  recognition?.stop(); recognition = null;
+  document.getElementById('btn-mic').classList.remove('listening');
+  setRobotState('idle');
+}
+
+let selectedVoice = null;
+
+function loadVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  const sel    = document.getElementById('voice-select');
+  const t      = LANG_TEXT[currentLang];
+  sel.innerHTML = `<option value="">${t.voiceDefault}</option>`;
+  voices.forEach((v, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = v.name + (v.lang ? ` (${v.lang})` : '');
+    if (v.lang === t.ttsLang) opt.textContent = '⭐ ' + opt.textContent;
+    sel.appendChild(opt);
+  });
+}
+function setVoice(idx) {
+  selectedVoice = idx !== '' ? window.speechSynthesis.getVoices()[idx] : null;
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speak(text) {
+  if (!ttsEnabled || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = LANG_TEXT[currentLang].ttsLang;
+  u.rate = 0.95;
+  if (selectedVoice) u.voice = selectedVoice;
+  u.onstart = () => setRobotState('speaking');
+  u.onend   = () => setRobotState('idle');
+  window.speechSynthesis.speak(u);
+}
+function toggleTTS() {
+  ttsEnabled = !ttsEnabled;
+  document.getElementById('tts-toggle').classList.toggle('on', ttsEnabled);
+  if (!ttsEnabled) window.speechSynthesis?.cancel();
+}
+
+function callRobot() {
+  const btn = document.getElementById('btn-robot');
+  if (btn.classList.contains('called')) return;
+  btn.classList.add('called');
+  const t = LANG_TEXT[currentLang];
+  btn.innerHTML = `<span class="icon">✅</span>${t.called}`;
+  ch.postMessage({ type: 'robot-call', timestamp: Date.now() });
+  addBubble('bot', t.robotCalled);
+  if (ttsEnabled) speak(t.robotCalledSpeak);
+  setTimeout(() => {
+    btn.classList.remove('called');
+    const t2 = LANG_TEXT[currentLang];
+    btn.innerHTML = `<span class="icon">🤖</span><span id="label-robot">${t2.btnRobot}</span>`;
+  }, 10000);
+}
+
+function callNurse() {
+  const btn = document.getElementById('btn-nurse');
+  if (btn.classList.contains('called')) return;
+  btn.classList.add('called');
+  const t = LANG_TEXT[currentLang];
+  btn.innerHTML = `<span class="icon">✅</span>${t.called}`;
+  ch.postMessage({ type: 'nurse-call', timestamp: Date.now() });
+  addBubble('bot', t.nurseCalled);
+  if (ttsEnabled) speak(t.nurseCalledSpeak);
+  setTimeout(() => {
+    btn.classList.remove('called');
+    const t2 = LANG_TEXT[currentLang];
+    btn.innerHTML = `<span class="icon">🔔</span><span id="label-nurse">${t2.btnNurse}</span>`;
+  }, 10000);
+}
+
+function openSuggest()  { document.getElementById('suggest-modal').classList.add('open'); }
+function closeSuggest() { document.getElementById('suggest-modal').classList.remove('open'); }
+function submitSuggest() {
+  const text = document.getElementById('suggest-text').value.trim();
+  if (!text) return;
+  const item = { text, timestamp: Date.now() };
+  const list = JSON.parse(localStorage.getItem('suggestions') || '[]');
+  list.push(item);
+  localStorage.setItem('suggestions', JSON.stringify(list));
+  ch.postMessage({ type: 'suggestion', ...item });
+  document.getElementById('suggest-text').value = '';
+  closeSuggest();
+  addBubble('bot', LANG_TEXT[currentLang].suggestDone);
+}
+
+function addBubble(role, text) {
+  const wrap  = document.getElementById('chat-wrap');
+  const icons = { bot:'🤖', user:'🧑', 'staff-rep':'👩‍⚕️' };
+  const row   = document.createElement('div');
+  row.className = `bubble-row ${role}`;
+
+  const av = document.createElement('div');
+  av.className = 'bav';
+  av.textContent = icons[role] || '🧑';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) bubble.appendChild(document.createElement('br'));
+    bubble.appendChild(document.createTextNode(line));
+  });
+
+  row.appendChild(av);
+  row.appendChild(bubble);
+  wrap.appendChild(row);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function addTyping() {
+  const wrap = document.getElementById('chat-wrap');
+  const row  = document.createElement('div');
+  const id   = 'typing-' + Date.now();
+  row.className = 'bubble-row bot'; row.id = id;
+  row.innerHTML = `<div class="bav">🤖</div><div class="bubble typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  wrap.appendChild(row); wrap.scrollTop = wrap.scrollHeight;
+  return id;
+}
+function removeTyping(id) { document.getElementById(id)?.remove(); }
+function setStatus(state, main, sub) {
+  document.getElementById('status-main').textContent = main;
+  document.getElementById('status-sub').textContent  = sub;
+  setRobotState(state);
+}
+function setRobotState(state) {
+  const f = document.getElementById('robot-face');
+  f.classList.remove('listening','speaking');
+  if (state === 'listening') f.classList.add('listening');
+  if (state === 'speaking')  f.classList.add('speaking');
+}
+</script>
+  <script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

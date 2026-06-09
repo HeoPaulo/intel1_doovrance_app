@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>직원 대시보드 — MedQR 병원</title>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --blue:#2563eb; --blue-l:#dbeafe;
+      --green:#16a34a; --green-l:#dcfce7;
+      --red:#ef4444; --red-l:#fef2f2;
+      --orange:#f97316; --orange-l:#fff7ed;
+      --purple:#7c3aed; --purple-l:#ede9fe;
+      --bg:#f1f5f9; --card:#fff;
+      --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
+    }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); min-height:100vh; }
+
+    header {
+      background:#1e293b; color:#fff; padding:14px 28px;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:50;
+    }
+    .h-title { font-size:18px; font-weight:800; }
+    .h-title span { color:#93c5fd; }
+    .h-right { display:flex; align-items:center; gap:14px; }
+    .h-clock { font-size:14px; color:rgba(255,255,255,.65); }
+    .badge-online { background:#22c55e; color:#fff; font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; }
+
+    .layout { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:20px; max-width:1100px; margin:0 auto; }
+    @media(max-width:720px) { .layout { grid-template-columns:1fr; } }
+
+    .panel { background:var(--card); border-radius:14px; box-shadow:0 1px 6px rgba(0,0,0,.08); overflow:hidden; }
+    .panel-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .panel-title { font-size:15px; font-weight:700; }
+    .panel-body  { padding:14px 18px; }
+
+    /* Alert cards */
+    .alert-list { display:flex; flex-direction:column; gap:10px; min-height:60px; }
+    .alert-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-radius:10px; animation:slideIn .3s ease;
+    }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .alert-item.robot  { background:var(--purple-l); border:1px solid #ddd6fe; }
+    .alert-item.nurse  { background:var(--red-l);    border:1px solid #fecaca; }
+    .alert-left { display:flex; align-items:center; gap:10px; }
+    .alert-icon { font-size:22px; }
+    .alert-title { font-weight:700; font-size:14px; }
+    .alert-time  { font-size:12px; color:var(--muted); margin-top:1px; }
+    .btn-dismiss {
+      padding:5px 12px; border-radius:7px; border:none; font-size:12px; font-weight:600;
+      cursor:pointer; background:rgba(0,0,0,.08); color:var(--text); transition:.15s;
+    }
+    .btn-dismiss:hover { background:rgba(0,0,0,.15); }
+    .alert-empty { text-align:center; color:var(--muted); font-size:13px; padding:20px; }
+
+    /* Chat panel */
+    .chat-area {
+      height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
+      margin-bottom:14px; padding-right:4px;
+    }
+    .chat-empty-msg { flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; text-align:center; }
+    .msg-row { display:flex; gap:8px; align-items:flex-end; }
+    .msg-row.from-patient { /* left */ }
+    .msg-row.from-staff   { flex-direction:row-reverse; }
+    .msg-av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; background:var(--blue-l); }
+    .msg-row.from-staff .msg-av { background:#dcfce7; }
+    .msg-bubble { max-width:80%; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.5; }
+    .msg-row.from-patient .msg-bubble { background:var(--blue-l); border-bottom-left-radius:4px; }
+    .msg-row.from-staff   .msg-bubble { background:var(--green-l); border-bottom-right-radius:4px; }
+    .msg-time { font-size:11px; color:var(--muted); flex-shrink:0; padding-bottom:4px; }
+
+    .reply-row { display:flex; gap:8px; }
+    .reply-input {
+      flex:1; height:42px; border:1.5px solid var(--border); border-radius:9px;
+      padding:0 12px; font-size:13px; color:var(--text);
+    }
+    .reply-input:focus { outline:none; border-color:var(--blue); }
+    .btn { height:42px; border-radius:9px; border:none; font-size:13px; font-weight:600; cursor:pointer; padding:0 16px; transition:.15s; }
+    .btn-blue  { background:var(--blue); color:#fff; }
+    .btn-blue:hover  { background:#1d4ed8; }
+    .btn-ghost { background:transparent; border:1.5px solid var(--border); color:var(--text); }
+    .btn-ghost:hover { border-color:var(--blue); color:var(--blue); }
+
+    /* Suggestions */
+    .suggest-list { display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto; }
+    .suggest-item {
+      background:var(--bg); border-radius:10px; padding:12px 14px;
+      border-left:3px solid var(--green);
+    }
+    .suggest-text { font-size:14px; color:var(--text); line-height:1.5; margin-bottom:5px; }
+    .suggest-meta { font-size:11px; color:var(--muted); }
+    .suggest-empty { text-align:center; color:var(--muted); font-size:13px; padding:24px; }
+
+    .count-badge {
+      background:var(--red); color:#fff; font-size:11px; font-weight:700;
+      padding:2px 7px; border-radius:99px; margin-left:6px;
+    }
+    .count-badge:empty { display:none; }
+
+    /* Full-width panel */
+    .full-col { grid-column:1/-1; }
+
+    /* New message flash */
+    .new-msg-flash { animation:flash .4s ease; }
+    @keyframes flash { 0%,100%{background:inherit} 50%{background:#fef9c3} }
+  </style>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MedQR 직원" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+</head>
+<body>
+
+<header>
+  <div class="h-title">Med<span>QR</span> 직원 대시보드</div>
+  <div class="h-right">
+    <span class="badge-online">● 온라인</span>
+    <div class="h-clock" id="clock">--:--</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- 호출 알림 -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">🚨 호출 알림 <span class="count-badge" id="call-count"></span></div>
+      <button class="btn btn-ghost" style="height:34px;padding:0 12px;font-size:12px;" onclick="clearAllCalls()">전체 해제</button>
+    </div>
+    <div class="panel-body">
+      <div class="alert-list" id="alert-list">
+        <div class="alert-empty">현재 호출 없음</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 환자 채팅 -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">💬 환자 채팅 <span class="count-badge" id="msg-count"></span></div>
+      <button class="btn btn-ghost" style="height:34px;padding:0 12px;font-size:12px;" onclick="clearChat()">초기화</button>
+    </div>
+    <div class="panel-body">
+      <div class="chat-area" id="chat-area">
+        <div class="chat-empty-msg">환자 메시지를 기다리는 중…</div>
+      </div>
+      <div class="reply-row">
+        <input type="text" class="reply-input" id="reply-input"
+               placeholder="답변을 입력하세요…"
+               onkeydown="if(event.key==='Enter') sendReply()" />
+        <button class="btn btn-blue" onclick="sendReply()">전송</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 건의함 -->
+  <div class="panel full-col">
+    <div class="panel-header">
+      <div class="panel-title">📝 건의함 <span class="count-badge" id="suggest-count"></span></div>
+      <button class="btn btn-ghost" style="height:34px;padding:0 12px;font-size:12px;" onclick="clearSuggestions()">전체 삭제</button>
+    </div>
+    <div class="panel-body">
+      <div class="suggest-list" id="suggest-list">
+        <div class="suggest-empty">접수된 건의사항이 없습니다</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── BroadcastChannel ─────────────────────────────────────────────
+const ch = new BroadcastChannel('medqr-hospital');
+ch.onmessage = (e) => {
+  const { type } = e.data;
+  if (type === 'patient-message') addPatientMsg(e.data.text, e.data.timestamp);
+  if (type === 'robot-call')      addCallAlert('robot',  '🤖 로봇 호출', e.data.timestamp);
+  if (type === 'nurse-call')      addCallAlert('nurse',  '🔔 간호사 호출', e.data.timestamp);
+  if (type === 'suggestion')      addSuggestion(e.data.text, e.data.timestamp);
+};
+
+// ── Clock ────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+}, 1000);
+
+// ── State ────────────────────────────────────────────────────────
+let callCount = 0;
+let msgCount  = 0;
+
+// ── Calls ────────────────────────────────────────────────────────
+function addCallAlert(type, label, ts) {
+  const list = document.getElementById('alert-list');
+  list.querySelector('.alert-empty')?.remove();
+
+  const item = document.createElement('div');
+  item.className = `alert-item ${type}`;
+  const id = 'call-' + Date.now();
+  item.id  = id;
+  item.innerHTML = `
+    <div class="alert-left">
+      <div class="alert-icon">${type === 'robot' ? '🤖' : '🔔'}</div>
+      <div>
+        <div class="alert-title">${label}</div>
+        <div class="alert-time">${fmtTime(ts)}</div>
+      </div>
+    </div>
+    <button class="btn-dismiss" onclick="dismissCall('${id}')">처리 완료</button>
+  `;
+  list.appendChild(item);
+  callCount++;
+  updateBadge('call-count', callCount);
+
+  // 알림음
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = type === 'nurse' ? 880 : 660;
+    gain.gain.setValueAtTime(.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .6);
+    osc.start(); osc.stop(ctx.currentTime + .6);
+  } catch {}
+}
+
+function dismissCall(id) {
+  document.getElementById(id)?.remove();
+  callCount = Math.max(0, callCount - 1);
+  updateBadge('call-count', callCount);
+  if (!document.querySelector('.alert-item')) {
+    document.getElementById('alert-list').innerHTML = '<div class="alert-empty">현재 호출 없음</div>';
+  }
+}
+
+function clearAllCalls() {
+  document.getElementById('alert-list').innerHTML = '<div class="alert-empty">현재 호출 없음</div>';
+  callCount = 0; updateBadge('call-count', 0);
+}
+
+// ── Chat ─────────────────────────────────────────────────────────
+function addPatientMsg(text, ts) {
+  const area = document.getElementById('chat-area');
+  area.querySelector('.chat-empty-msg')?.remove();
+
+  const row = document.createElement('div');
+  row.className = 'msg-row from-patient new-msg-flash';
+  const av1 = document.createElement('div'); av1.className = 'msg-av'; av1.textContent = '🧑';
+  const b1  = document.createElement('div'); b1.className  = 'msg-bubble'; b1.textContent = text;
+  const t1  = document.createElement('div'); t1.className  = 'msg-time';   t1.textContent = fmtTime(ts);
+  row.append(av1, b1, t1);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+  msgCount++;
+  updateBadge('msg-count', msgCount);
+}
+
+function sendReply() {
+  const input = document.getElementById('reply-input');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const area = document.getElementById('chat-area');
+  area.querySelector('.chat-empty-msg')?.remove();
+  const row = document.createElement('div');
+  row.className = 'msg-row from-staff';
+  const av2 = document.createElement('div'); av2.className = 'msg-av'; av2.textContent = '👩‍⚕️';
+  const b2  = document.createElement('div'); b2.className  = 'msg-bubble'; b2.textContent = text;
+  const t2  = document.createElement('div'); t2.className  = 'msg-time';   t2.textContent = fmtTime(Date.now());
+  row.append(av2, b2, t2);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+
+  // 키오스크로 전송
+  ch.postMessage({ type:'staff-reply', text, timestamp: Date.now() });
+  msgCount = 0; updateBadge('msg-count', 0);
+}
+
+function clearChat() {
+  document.getElementById('chat-area').innerHTML = '<div class="chat-empty-msg">환자 메시지를 기다리는 중…</div>';
+  msgCount = 0; updateBadge('msg-count', 0);
+}
+
+// ── Suggestions ──────────────────────────────────────────────────
+function addSuggestion(text, ts) {
+  renderSuggestions();
+}
+
+function renderSuggestions() {
+  const list = JSON.parse(localStorage.getItem('suggestions') || '[]');
+  const el   = document.getElementById('suggest-list');
+  document.getElementById('suggest-count').textContent = list.length || '';
+
+  if (!list.length) {
+    el.innerHTML = '<div class="suggest-empty">접수된 건의사항이 없습니다</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  [...list].reverse().forEach(s => {
+    const item = document.createElement('div'); item.className = 'suggest-item';
+    const st = document.createElement('div'); st.className = 'suggest-text'; st.textContent = s.text;
+    const sm = document.createElement('div'); sm.className = 'suggest-meta'; sm.textContent = fmtTime(s.timestamp);
+    item.append(st, sm); el.appendChild(item);
+  });
+}
+
+function clearSuggestions() {
+  localStorage.removeItem('suggestions');
+  renderSuggestions();
+}
+
+// ── Utils ────────────────────────────────────────────────────────
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+function updateBadge(id, n) {
+  document.getElementById(id).textContent = n > 0 ? n : '';
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+renderSuggestions();
+
+// localStorage 변경 감지 (같은 브라우저 다른 탭에서 건의함 접수 시 실시간 반영)
+window.addEventListener('storage', (e) => {
+  if (e.key === 'suggestions') renderSuggestions();
+});
+</script>
+  <script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
