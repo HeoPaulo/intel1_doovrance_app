@@ -288,7 +288,10 @@
 </div>
 
 <script>
-const OLLAMA_URL   = 'http://localhost:11434/api/chat';
+// 같은 네트워크 기기 접속 시 PC IP 자동 감지
+const OLLAMA_HOST  = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'localhost' : location.hostname;
+const OLLAMA_URL   = `http://${OLLAMA_HOST}:11434/api/chat`;
 const OLLAMA_MODEL = 'gemma3:4b';
 
 const HOSPITAL_INFO = {
